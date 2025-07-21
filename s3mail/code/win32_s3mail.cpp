@@ -1,26 +1,77 @@
 #include <windows.h>
 
 #include <GL/gl.h>
+
 #include <stdio.h>
 #include <string.h>
+
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 
+#if !defined(COMPILER_MSVC)
+#define COMPILER_MSVC 0
+#endif
+
+#if !defined(COMPILER_LLVM)
+#define COMPILER_LLVM 0
+#endif
+
+#if !COMPILER_MSVC && !COMPILER_LLVM
+#if _MSC_VER
+#undef COMPILER_MSVC
+#define COMPILER_MSVC 1
+#else
+// TODO(casey): Moar compilerz!!!
+#undef COMPILER_LLVM
+#define COMPILER_LLVM 1
+#endif
+#endif
+
+#if COMPILER_MSVC
+#include <intrin.h>
+#endif
+
+//
+// NOTE(casey): Types
+//
+#include <stdint.h>
+#include <stddef.h>
+
+typedef int8_t int8;
+typedef int16_t int16;
+typedef int32_t int32;
+typedef int64_t int64;
+typedef int32 bool32;
+
+typedef uint8_t uint8;
+typedef uint16_t uint16;
+typedef uint32_t uint32;
+typedef uint64_t uint64;
+
+typedef size_t memory_index;
+
+typedef float real32;
+typedef double real64;
+
+#define internal static
+#define local_persist static
+#define global_variable static
+
 // Global variables
-static HWND g_hwnd = NULL;
-static HDC g_hdc = NULL;
-static HGLRC g_hglrc = NULL;
-static int g_window_width = 1200;
-static int g_window_height = 800;
-static int g_mouse_x = 0, g_mouse_y = 0;
-static int g_mouse_down = 0;
+global_variable HWND g_hwnd = 0;
+global_variable HDC g_hdc = 0;
+global_variable HGLRC g_hglrc = 0;
+global_variable int g_window_width = 1200;
+global_variable int g_window_height = 800;
+global_variable int g_mouse_x = 0, g_mouse_y = 0;
+global_variable int g_mouse_down = 0;
 
 // Global font data for stb_truetype
-static unsigned char font_buffer[1024*1024];
-static stbtt_fontinfo font;
-static unsigned char* font_bitmap;
-static stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
-static GLuint font_texture_id;
+global_variable unsigned char font_buffer[1024*1024];
+global_variable stbtt_fontinfo font;
+global_variable unsigned char* font_bitmap;
+global_variable stbtt_bakedchar cdata[96]; // ASCII 32..126 is 95 glyphs
+global_variable GLuint font_texture_id;
 
 // Function prototypes
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -46,10 +97,10 @@ typedef struct {
 } UIList;
 
 // UI state
-static UIButton compose_button = {10, 10, 100, 30, "Compose", 0, 0};
-static UIButton send_button = {120, 10, 80, 30, "Send", 0, 0};
-static UIList folder_list = {10, 50, 200, 300, {"Inbox", "Sent", "Drafts", "Trash"}, 4, 0};
-static UIList email_list = {220, 50, 400, 300, {"Email 1", "Email 2", "Email 3"}, 3, -1};
+static UIButton compose_button = {10, 400, 100, 30, "Compose", 0, 0};
+static UIButton send_button = {120, 400, 80, 30, "Send", 0, 0};
+static UIList folder_list = {10, 450, 200, 100, {"Trash", "Drafts", "Sent", "Inbox"}, 4, 0};
+static UIList email_list = {220, 450, 400, 100, {"Email 3", "Email 2", "Email 1"}, 3, -1};
 
 // Simple rendering functions
 void SetColor(float r, float g, float b) {
@@ -74,17 +125,6 @@ void DrawRectOutline(float x, float y, float width, float height) {
     glEnd();
 }
 
-/*
-void DrawText(const char* text, float x, float y) {
-    // For now, just draw a placeholder rectangle for each character
-    int len = (int)strlen(text);
-    SetColor(0.0f, 0.0f, 0.0f);
-    for (int i = 0; i < len; i++) {
-        DrawRect(x + i * 8, y, 6, 12);
-    }
-}
-*/
-
 void DrawText(const char* text, float x, float y) {
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -92,17 +132,22 @@ void DrawText(const char* text, float x, float y) {
     glBindTexture(GL_TEXTURE_2D, font_texture_id);
     
     float current_x = x;
+    float current_y = y;
     
     glBegin(GL_QUADS);
     for (int i = 0; text[i]; i++) {
         if (text[i] >= 32 && text[i] < 128) {
             stbtt_aligned_quad q;
-            stbtt_GetBakedQuad(cdata, 512, 512, text[i] - 32, &current_x, &y, &q, 1);
+            stbtt_GetBakedQuad(cdata, 512, 512, text[i] - 32, &current_x, &current_y, &q, 1);
             
-            glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, q.y1);
-            glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, q.y1);
-            glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, q.y0);
-            glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, q.y0);
+            // Flip Y coordinates OpenGL uses top-left origin, STB Truetype uses bottom-left origin
+            float y_flipped_0 = y - (q.y0 - y);
+            float y_flipped_1 = y - (q.y1 - y);
+            
+            glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, y_flipped_0);
+            glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, y_flipped_0);
+            glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, y_flipped_1);
+            glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, y_flipped_1);
         }
     }
     glEnd();
@@ -370,9 +415,9 @@ void RenderFrame(void) {
     
     // Draw email preview area
     SetColor(1.0f, 1.0f, 1.0f);
-    DrawRect(630, 50, 550, 300);
+    DrawRect(15, 50, 550, 300);
     SetColor(0.0f, 0.0f, 0.0f);
-    DrawRectOutline(630, 50, 550, 300);
+    DrawRectOutline(15, 50, 550, 300);
     
     if (email_list.selected_item >= 0) {
         char preview_text[256];
