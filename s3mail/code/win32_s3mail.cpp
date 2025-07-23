@@ -291,8 +291,25 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         if (wParam == VK_ESCAPE) {
             PostQuitMessage(0);
         }
-        return 0;
-        
+        else if (wParam == 'J')
+        {
+            // Move down
+            if (email_list.selected_item < email_list.item_count - 1)
+            {
+                email_list.selected_item++;
+                InvalidateRect(hwnd, NULL, FALSE);
+            }
+        }
+        else if (wParam == 'K')
+        {
+            // Move up
+            if (email_list.selected_item > 0)
+            {
+                email_list.selected_item--;
+                InvalidateRect(hwnd, NULL, FALSE);
+            }
+            return 0;
+        }
         default:
         return DefWindowProc(hwnd, uMsg, wParam, lParam);
     }
