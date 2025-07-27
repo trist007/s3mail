@@ -101,6 +101,7 @@ static UIButton compose_button = {10, 635, 100, 30, "Compose", 0, 0};
 static UIButton delete_button = {120, 635, 100, 30, "Delete", 0, 0};
 static UIList folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 0};
 static UIList email_list = {220, 40, 900, 580, {"Email 3", "Email 2", "Email 1"}, 3, -1};
+static UIList nomas = {10, 150, 200, 150, { "Papi", "Mon", "Glenn", "Vito"}, 4, -1};
 
 // Simple rendering functions
 void SetColor(float r, float g, float b) {
@@ -430,12 +431,14 @@ void RenderFrame(void) {
     UpdateButton(&delete_button, g_mouse_x, g_mouse_y, g_mouse_down);
     UpdateList(&folder_list, g_mouse_x, g_mouse_y, g_mouse_down);
     UpdateList(&email_list, g_mouse_x, g_mouse_y, g_mouse_down);
+    UpdateList(&nomas, g_mouse_x, g_mouse_y, g_mouse_down);
     
     // Render UI elements
     RenderButton(&compose_button);
     RenderButton(&delete_button);
     RenderList(&folder_list);
     RenderList(&email_list);
+    RenderList(&nomas);
     
     // Draw email preview area
     /*
@@ -477,11 +480,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     g_hwnd = CreateWindow(
                           "S3MailWindow",
                           "S3Mail - OpenGL Email Client",
-                          WS_OVERLAPPEDWINDOW,
-                          CW_USEDEFAULT, CW_USEDEFAULT,
-                          g_window_width, g_window_height,
-                          NULL, NULL, hInstance, NULL
-                          );
+                          WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                          //CW_USEDEFAULT, CW_USEDEFAULT,
+                          3000, 200, // spawn on the right hand side of the screen
+                          g_window_width,
+                          g_window_height,
+                          0,
+                          0,
+                          hInstance,
+                          0);
     
     if (!g_hwnd) {
         MessageBox(NULL, "Failed to create window", "Error", MB_OK);
