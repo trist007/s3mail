@@ -97,10 +97,10 @@ typedef struct {
 } UIList;
 
 // UI state
-static UIButton compose_button = {10, 400, 100, 30, "Compose", 0, 0};
-static UIButton send_button = {120, 400, 80, 30, "Send", 0, 0};
-static UIList folder_list = {10, 450, 200, 100, {"Trash", "Drafts", "Sent", "Inbox"}, 4, 0};
-static UIList email_list = {220, 450, 400, 100, {"Email 3", "Email 2", "Email 1"}, 3, -1};
+static UIButton compose_button = {10, 635, 100, 30, "Compose", 0, 0};
+static UIButton delete_button = {120, 635, 100, 30, "Delete", 0, 0};
+static UIList folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 0};
+static UIList email_list = {220, 40, 900, 580, {"Email 3", "Email 2", "Email 1"}, 3, -1};
 
 // Simple rendering functions
 void SetColor(float r, float g, float b) {
@@ -280,8 +280,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         if (compose_button.is_pressed) {
             MessageBox(hwnd, "Compose clicked!", "S3Mail", MB_OK);
         }
-        if (send_button.is_pressed) {
-            MessageBox(hwnd, "Send clicked!", "S3Mail", MB_OK);
+        if (delete_button.is_pressed) {
+            MessageBox(hwnd, "Delete clicked!", "S3Mail", MB_OK);
         }
         
         InvalidateRect(hwnd, NULL, FALSE);
@@ -418,23 +418,32 @@ void HandleResize(int width, int height) {
 void RenderFrame(void) {
     glClear(GL_COLOR_BUFFER_BIT);
     
+    // Draw cool purple style stripe
+    SetColor(0.3f, 0.3f, 0.7f);
+    DrawRect(0, 675, 1200, 450);
+    
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawRectOutline(0, 675, 1200, 450);
+    
     // Update UI elements
     UpdateButton(&compose_button, g_mouse_x, g_mouse_y, g_mouse_down);
-    UpdateButton(&send_button, g_mouse_x, g_mouse_y, g_mouse_down);
+    UpdateButton(&delete_button, g_mouse_x, g_mouse_y, g_mouse_down);
     UpdateList(&folder_list, g_mouse_x, g_mouse_y, g_mouse_down);
     UpdateList(&email_list, g_mouse_x, g_mouse_y, g_mouse_down);
     
     // Render UI elements
     RenderButton(&compose_button);
-    RenderButton(&send_button);
+    RenderButton(&delete_button);
     RenderList(&folder_list);
     RenderList(&email_list);
     
     // Draw email preview area
-    SetColor(1.0f, 1.0f, 1.0f);
+    /*
+SetColor(1.0f, 1.0f, 1.0f);
     DrawRect(15, 50, 550, 300);
     SetColor(0.0f, 0.0f, 0.0f);
     DrawRectOutline(15, 50, 550, 300);
+    */
     
     if (email_list.selected_item >= 0) {
         char preview_text[256];
