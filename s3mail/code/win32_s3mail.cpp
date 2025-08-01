@@ -7,26 +7,16 @@
 static HWND g_hwnd = 0;
 static HDC g_hdc = 0;
 static HGLRC g_hglrc = 0;
+static Win32GameCode g_game_code = {0};
 static GameState g_game_state = {0};
 
-// DLL hot reloading
-typedef struct {
-    HMODULE dll;
-    FILETIME last_write_time;
-    game_update_and_render *UpdateAndRender;
-    game_handle_key_press *HandleKeyPress;
-    bool32 is_valid;
-} Win32_GameCode;
-
-static Win32_GameCode g_game_code = {0};
-
 // Platform API implementation
-void Win32_SetColor(float r, float g, float b)
+void Win32SetColor(float r, float g, float b)
 {
     glColor3f(r, g, b);
 }
 
-void Win32_DrawRect(float x, float y, float width, float height)
+void Win32DrawRect(float x, float y, float width, float height)
 {
     glBegin(GL_QUADS);
     glVertex2f(x, y);
@@ -36,7 +26,7 @@ void Win32_DrawRect(float x, float y, float width, float height)
     glEnd();
 }
 
-void Win32_DrawRectOutline(float x, float y, float width, float height)
+void Win32DrawRectOutline(float x, float y, float width, float height)
 {
     glBegin(GL_LINE_LOOP);
     glVertex2f(x, y);
@@ -46,7 +36,7 @@ void Win32_DrawRectOutline(float x, float y, float width, float height)
     glEnd();
 }
 
-void Win32_DrawText(const char *text, float x, float y)
+void Win32DrawText(const char *text, float x, float y)
 {
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -88,23 +78,23 @@ void Win32_DrawText(const char *text, float x, float y)
     glDisable(GL_TEXTURE_2D);
 }
 
-int Win32_PointInRect(int px, int py, float x, float y, float width, float height)
+int Win32PointInRect(int px, int py, float x, float y, float width, float height)
 {
     return px >= x && px <= x + width && py >= y && py <= y + height;
 }
 
-void Win32_ShowMessage(const char *message)
+void Win32ShowMessage(const char *message)
 {
     MessageBox(g_hwnd, message, "S3Mail", MB_OK);
 }
 
-void Win32_InvalidateWindow(void)
+void Win32InvalidateWindow(void)
 {
     InvalidateRect(g_hwnd, 0, FALSE);
 }
 
 // DLL management
-FILETIME Win32_GetLastWriteTime(const char *filename)
+FILETIME Win32GetLastWriteTime(const char *filename)
 {
     WIN32_FILE_ATTRIBUTE_DATA data;
     FILETIME Result = {0};
@@ -115,14 +105,14 @@ FILETIME Win32_GetLastWriteTime(const char *filename)
     return Result;
 }
 
-Win32_GameCode Win32_LoadGameCode(const char *dll_path, const char *temp_dll_path, char *lock_filename)
+Win32GameCode Win32LoadGameCode(const char *dll_path, const char *temp_dll_path, char *lock_filename)
 {
-    Win32_GameCode Result = {0};
+    Win32GameCode Result = {0};
     
     WIN32_FILE_ATTRIBUTE_DATA Ignored;
     if(!GetFileAttributesEx(lock_filename, GetFileExInfoStandard, &Ignored))
     {
-        Result.last_write_time = Win32_GetLastWriteTime(dll_path);
+        Result.last_write_time = Win32GetLastWriteTime(dll_path);
         
         CopyFile(dll_path, temp_dll_path, FALSE);
         
@@ -144,7 +134,7 @@ Win32_GameCode Win32_LoadGameCode(const char *dll_path, const char *temp_dll_pat
     return Result;
 }
 
-void Win32_UnloadGameCode(Win32_GameCode *game_code)
+void Win32UnloadGameCode(Win32GameCode *game_code)
 {
     if (game_code->dll)
     {
@@ -157,7 +147,7 @@ void Win32_UnloadGameCode(Win32_GameCode *game_code)
 }
 
 // Initialize game state
-void Win32_InitializeGameState(void)
+void Win32InitializeGameState(void)
 {
     // NOTE(trist007): try using CW_USEDEFAULT
     g_game_state.window_width = 1200;
@@ -173,7 +163,7 @@ void Win32_InitializeGameState(void)
 }
 
 // OpenGL and font initialization (same as before)
-int Win32_InitOpenGL(HWND hwnd)
+int Win32InitOpenGL(HWND hwnd)
 {
     g_hdc = GetDC(hwnd);
     if (!g_hdc) return 0;
@@ -200,7 +190,7 @@ int Win32_InitOpenGL(HWND hwnd)
     return 1;
 }
 
-int Win32_InitFont(const char *font_path)
+int Win32InitFont(const char *font_path)
 {
     static unsigned char font_buffer[1024*1024];
     static unsigned char *font_bitmap;
@@ -228,7 +218,7 @@ int Win32_InitFont(const char *font_path)
     return 1;
 }
 
-void Win32_HandleResize(int width, int height)
+void Win32HandleResize(int width, int height)
 {
     if (height == 0) height = 1;
     
@@ -249,21 +239,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
         case WM_CREATE:
-        if (!Win32_InitOpenGL(hwnd)) return -1;
-        if (!Win32_InitFont("C:\\dev\\s3mail\\s3mail\\code\\fonts\\liberation-mono.ttf"))
+        if (!Win32InitOpenGL(hwnd)) return -1;
+        if (!Win32InitFont("C:\\dev\\s3mail\\s3mail\\code\\fonts\\liberation-mono.ttf"))
         {
             MessageBox(hwnd, "Failed to load font", "Warning", MB_OK);
         }
-        Win32_InitializeGameState();
+        Win32InitializeGameState();
         return 0;
         
         case WM_DESTROY:
-        Win32_UnloadGameCode(&g_game_code);
+        Win32UnloadGameCode(&g_game_code);
         PostQuitMessage(0);
         return 0;
         
         case WM_SIZE:
-        Win32_HandleResize(LOWORD(lParam), HIWORD(lParam));
+        Win32HandleResize(LOWORD(lParam), HIWORD(lParam));
         InvalidateRect(hwnd, 0, FALSE);
         return 0;
         
@@ -273,22 +263,22 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             BeginPaint(hwnd, &ps);
             
             // Check for DLL reload
-            FILETIME new_write_time = Win32_GetLastWriteTime("s3mail_game.dll");
+            FILETIME new_write_time = Win32GetLastWriteTime("s3mail_game.dll");
             if (CompareFileTime(&new_write_time, &g_game_code.last_write_time) != 0)
             {
-                Win32_UnloadGameCode(&g_game_code);
-                g_game_code = Win32_LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll", "lock.tmp");
+                Win32UnloadGameCode(&g_game_code);
+                g_game_code = Win32LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll", "lock.tmp");
             }
             
             // Setup Platform API
             PlatformAPI win32 = {0};
-            win32.SetColor = Win32_SetColor;
-            win32.DrawRect = Win32_DrawRect;
-            win32.DrawRectOutline = Win32_DrawRectOutline;
-            win32.DrawText = Win32_DrawText;
-            win32.PointInRect = Win32_PointInRect;
-            win32.ShowMessage = Win32_ShowMessage;
-            win32.InvalidateWindow = Win32_InvalidateWindow;
+            win32.SetColor = Win32SetColor;
+            win32.DrawRect = Win32DrawRect;
+            win32.DrawRectOutline = Win32DrawRectOutline;
+            win32.DrawText = Win32DrawText;
+            win32.PointInRect = Win32PointInRect;
+            win32.ShowMessage = Win32ShowMessage;
+            win32.InvalidateWindow = Win32InvalidateWindow;
             
             // Call game code
             if (g_game_code.is_valid)
@@ -337,7 +327,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     // Load initial game code
-    g_game_code = Win32_LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll", "lock.tmp");
+    g_game_code = Win32LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll", "lock.tmp");
     
     // Register and create window
     WNDCLASS wc = {0};
