@@ -16,9 +16,9 @@ typedef struct {
     game_update_and_render *UpdateAndRender;
     game_handle_key_press *HandleKeyPress;
     bool32 is_valid;
-} GameCode;
+} Win32_GameCode;
 
-static GameCode g_game_code = {0};
+static Win32_GameCode g_game_code = {0};
 
 // Platform API implementation
 void Win32_SetColor(float r, float g, float b)
@@ -104,7 +104,7 @@ void Win32_InvalidateWindow(void)
 }
 
 // DLL management
-FILETIME GetLastWriteTime(const char *filename)
+FILETIME Win32_GetLastWriteTime(const char *filename)
 {
     WIN32_FILE_ATTRIBUTE_DATA data;
     FILETIME Result = {0};
@@ -115,21 +115,24 @@ FILETIME GetLastWriteTime(const char *filename)
     return Result;
 }
 
-GameCode LoadGameCode(const char *dll_path, const char *temp_dll_path)
+Win32_GameCode Win32_LoadGameCode(const char *dll_path, const char *temp_dll_path, char *lock_filename)
 {
-    GameCode Result = {0};
+    Win32_GameCode Result = {0};
     
-    Result.last_write_time = GetLastWriteTime(dll_path);
-    
-    // Copy DLL to temp location so we can reload it
-    CopyFile(dll_path, temp_dll_path, FALSE);
-    
-    Result.dll = LoadLibrary(temp_dll_path);
-    if (Result.dll)
+    WIN32_FILE_ATTRIBUTE_DATA Ignored;
+    if(!GetFileAttributesEx(lock_filename, GetFileExInfoStandard, &Ignored))
     {
-        Result.UpdateAndRender = (game_update_and_render*)GetProcAddress(Result.dll, "GameUpdateAndRender");
-        Result.HandleKeyPress = (game_handle_key_press*)GetProcAddress(Result.dll, "GameHandleKeyPress");
-        Result.is_valid = (Result.UpdateAndRender && Result.HandleKeyPress);
+        Result.last_write_time = Win32_GetLastWriteTime(dll_path);
+        
+        CopyFile(dll_path, temp_dll_path, FALSE);
+        
+        Result.dll = LoadLibrary(temp_dll_path);
+        if(Result.dll)
+        {
+            Result.UpdateAndRender = (game_update_and_render*)GetProcAddress(Result.dll, "GameUpdateAndRender");
+            Result.HandleKeyPress = (game_handle_key_press*)GetProcAddress(Result.dll, "GameHandleKeyPress");
+            Result.is_valid = (Result.UpdateAndRender && Result.HandleKeyPress);
+        }
     }
     
     if (!Result.is_valid)
@@ -141,7 +144,7 @@ GameCode LoadGameCode(const char *dll_path, const char *temp_dll_path)
     return Result;
 }
 
-void UnloadGameCode(GameCode *game_code)
+void Win32_UnloadGameCode(Win32_GameCode *game_code)
 {
     if (game_code->dll)
     {
@@ -154,7 +157,7 @@ void UnloadGameCode(GameCode *game_code)
 }
 
 // Initialize game state
-void InitializeGameState(void)
+void Win32_InitializeGameState(void)
 {
     // NOTE(trist007): try using CW_USEDEFAULT
     g_game_state.window_width = 1200;
@@ -166,10 +169,11 @@ void InitializeGameState(void)
     
     g_game_state.folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 0};
     g_game_state.email_list = {220, 40, 900, 580, {"Email 3", "Email 2", "Email 1"}, 3, -1};
+    g_game_state.contact_list = {10, 150, 200, 150, {"Papi", "Mom", "Glen", "Vito"}, 4, -1};
 }
 
 // OpenGL and font initialization (same as before)
-int InitOpenGL(HWND hwnd)
+int Win32_InitOpenGL(HWND hwnd)
 {
     g_hdc = GetDC(hwnd);
     if (!g_hdc) return 0;
@@ -196,7 +200,7 @@ int InitOpenGL(HWND hwnd)
     return 1;
 }
 
-int InitFont(const char *font_path)
+int Win32_InitFont(const char *font_path)
 {
     static unsigned char font_buffer[1024*1024];
     static unsigned char *font_bitmap;
@@ -224,7 +228,7 @@ int InitFont(const char *font_path)
     return 1;
 }
 
-void HandleResize(int width, int height)
+void Win32_HandleResize(int width, int height)
 {
     if (height == 0) height = 1;
     
@@ -245,21 +249,21 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
     switch (uMsg)
     {
         case WM_CREATE:
-        if (!InitOpenGL(hwnd)) return -1;
-        if (!InitFont("C:\\dev\\s3mail\\s3mail\\code\\fonts\\liberation-mono.ttf"))
+        if (!Win32_InitOpenGL(hwnd)) return -1;
+        if (!Win32_InitFont("C:\\dev\\s3mail\\s3mail\\code\\fonts\\liberation-mono.ttf"))
         {
             MessageBox(hwnd, "Failed to load font", "Warning", MB_OK);
         }
-        InitializeGameState();
+        Win32_InitializeGameState();
         return 0;
         
         case WM_DESTROY:
-        UnloadGameCode(&g_game_code);
+        Win32_UnloadGameCode(&g_game_code);
         PostQuitMessage(0);
         return 0;
         
         case WM_SIZE:
-        HandleResize(LOWORD(lParam), HIWORD(lParam));
+        Win32_HandleResize(LOWORD(lParam), HIWORD(lParam));
         InvalidateRect(hwnd, 0, FALSE);
         return 0;
         
@@ -269,11 +273,11 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             BeginPaint(hwnd, &ps);
             
             // Check for DLL reload
-            FILETIME new_write_time = GetLastWriteTime("s3mail_game.dll");
+            FILETIME new_write_time = Win32_GetLastWriteTime("s3mail_game.dll");
             if (CompareFileTime(&new_write_time, &g_game_code.last_write_time) != 0)
             {
-                UnloadGameCode(&g_game_code);
-                g_game_code = LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll");
+                Win32_UnloadGameCode(&g_game_code);
+                g_game_code = Win32_LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll", "lock.tmp");
             }
             
             // Setup Platform API
@@ -333,7 +337,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     // Load initial game code
-    g_game_code = LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll");
+    g_game_code = Win32_LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll", "lock.tmp");
     
     // Register and create window
     WNDCLASS wc = {0};
@@ -345,17 +349,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     if (!RegisterClass(&wc)) return 1;
     
-    g_hwnd = CreateWindow("S3MailWindow",
-                          "S3Mail",
-                          WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                          3000,
-                          200,
-                          1200,
-                          800,
-                          0,
-                          0,
-                          hInstance,
-                          0);
+    g_hwnd = CreateWindowEx(WS_EX_TOPMOST,
+                            "S3MailWindow",
+                            "S3Mail",
+                            WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+                            3000,
+                            200,
+                            1200,
+                            800,
+                            0,
+                            0,
+                            hInstance,
+                            0);
     
     if (!g_hwnd) return 1;
     

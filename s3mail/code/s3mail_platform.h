@@ -52,6 +52,7 @@ typedef struct {
     UIButton delete_button;
     UIList folder_list;
     UIList email_list;
+    UIList contact_list;
     
     // OpenGL font data
     GLuint font_texture_id;

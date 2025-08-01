@@ -9,16 +9,16 @@ pushd ..\..\build
 REM delete pdb
 del *.pdb > NUL 2> NUL
 REM Optimzation switches /02
-REM echo WAITING FOR PDB > lock.tmp
+echo WAITING FOR PDB > lock.tmp
 
 echo Building s3mail_game.dll...
-REM cl /LD /Zi /Od /nologo /I.. ..\s3mail_game.c /link /EXPORT:GameUpdateAndRender /EXPORT:GameHandleKeyPress /OUT:s3mail_game.dll
-cl %CommonCompilerFlags% ..\s3mail\code\s3mail_game.cpp  /link /DLL -EXPORT:GameUpdateAndRender -EXPORT:GameHandleKeyPress -Out:s3mail_game.dll
+REM cl /LD /Zi /Od /nologo /I.. ..\s3mail_game.cpp /link /EXPORT:GameUpdateAndRender /EXPORT:GameHandleKeyPress /OUT:s3mail_game.dll
+cl %CommonCompilerFlags% ..\s3mail\code\s3mail_game.cpp /link /DLL -EXPORT:GameUpdateAndRender -EXPORT:GameHandleKeyPress -Out:s3mail_game.dll
 
-REM del lock.tmp
+del lock.tmp
 
-echo Building s3mail.exe
+REM echo Building s3mail.exe
 REM cl /Zi /Od /nologo /I.. ..\s3mail.c opengl32.lib gdi32.lib user32.lib kernel32.lib /Fe:s3mail.exe
-cl %CommonCompilerFlags% ..\s3mail\code\win32_s3mail.cpp -Fmwin32_s3mail.map /link  %CommonLinkerFlags%
+REM cl %CommonCompilerFlags% ..\s3mail\code\win32_s3mail.cpp -Fmwin32_s3mail.map /link  %CommonLinkerFlags%
 
 popd

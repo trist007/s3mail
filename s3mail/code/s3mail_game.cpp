@@ -78,12 +78,14 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     UpdateButton(&state->delete_button, state->mouse_x, state->mouse_y, state->mouse_down, state->window_height, platform);
     UpdateList(&state->folder_list, state->mouse_x, state->mouse_y, state->mouse_down, state->window_height, platform);
     UpdateList(&state->email_list, state->mouse_x, state->mouse_y, state->mouse_down, state->window_height, platform);
+    UpdateList(&state->contact_list, state->mouse_x, state->mouse_y, state->mouse_down, state->window_height, platform);
     
     // Render UI elements
     RenderButton(&state->compose_button, platform);
     RenderButton(&state->delete_button, platform);
     RenderList(&state->folder_list, platform);
     RenderList(&state->email_list, platform);
+    RenderList(&state->contact_list, platform);
     
     // Email preview
     if (state->email_list.selected_item >= 0) {
