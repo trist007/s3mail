@@ -92,6 +92,8 @@ typedef struct {
 typedef struct {
     void (*UpdateAndRender)(GameState *state, PlatformAPI *platform);
     void (*HandleKeyPress)(GameState *state, int key_code);
+    void (*HandleMouseButton)(GameState *state, int key_code);
+    void (*HandleMouseMove)(GameState *state, int key_code);
     void (*InitializeUI)(GameState *state);
 } GameAPI;
 
@@ -102,6 +104,12 @@ typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 #define GAME_HANDLE_KEY_PRESS(name) void name(GameState *state, int key_code)
 typedef GAME_HANDLE_KEY_PRESS(game_handle_key_press);
 
+#define GAME_HANDLE_MOUSE_BUTTON(name) void name(GameState *state, int key_code)
+typedef GAME_HANDLE_MOUSE_BUTTON(game_handle_mouse_button);
+
+#define GAME_HANDLE_MOUSE_MOVE(name) void name(GameState *state, int key_code)
+typedef GAME_HANDLE_MOUSE_MOVE(game_handle_mouse_move);
+
 #define GAME_INITIALIZE_UI(name) bool32 name(GameState *state, PlatformAPI* platform)
 typedef GAME_INITIALIZE_UI(game_initialize_ui);
 
@@ -111,8 +119,17 @@ typedef struct {
     FILETIME last_write_time;
     game_update_and_render *UpdateAndRender;
     game_handle_key_press *HandleKeyPress;
+    game_handle_mouse_button *HandleMouseButton;
+    game_handle_mouse_button *HandleMouseMove;
     game_initialize_ui *InitializeUI;
     bool32 is_valid;
 } Win32GameCode;
+
+typedef struct game_button_state
+{
+    int HalfTransitionCount;
+    bool32 EndedDown;
+} game_button_state;
+
 
 #endif //S3MAIL_PLATFORM_H

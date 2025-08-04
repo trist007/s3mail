@@ -175,3 +175,17 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
         break;
     }
 }
+
+__declspec(dllexport)
+GAME_HANDLE_MOUSE_MOVE(GameHandleMouseMove) {
+    state->mouse_x = x;
+    state->mouse_y = y;
+}
+
+__declspec(dllexport)
+GAME_HANDLE_MOUSE_BUTTON(GameHandleMouseMove) {
+    if (button == 1)
+    {
+        state->mouse_down = is_pressed;
+    }
+}
