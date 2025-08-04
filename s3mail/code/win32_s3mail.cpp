@@ -121,7 +121,8 @@ Win32GameCode Win32LoadGameCode(const char *dll_path, const char *temp_dll_path,
         {
             Result.UpdateAndRender = (game_update_and_render*)GetProcAddress(Result.dll, "GameUpdateAndRender");
             Result.HandleKeyPress = (game_handle_key_press*)GetProcAddress(Result.dll, "GameHandleKeyPress");
-            Result.is_valid = (Result.UpdateAndRender && Result.HandleKeyPress);
+            Result.InitializeUI = (game_initialize_ui*)GetProcAddress(Result.dll, "GameInitializeUI");
+            Result.is_valid = (Result.UpdateAndRender && Result.HandleKeyPress && Result.InitializeUI);
         }
     }
     
@@ -144,6 +145,7 @@ void Win32UnloadGameCode(Win32GameCode *game_code)
     game_code->is_valid = false;
     game_code->UpdateAndRender = 0;
     game_code->HandleKeyPress = 0;
+    game_code->InitializeUI = 0;
 }
 
 // Initialize game state
@@ -284,6 +286,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
             if (g_game_code.is_valid)
             {
                 glClear(GL_COLOR_BUFFER_BIT);
+                g_game_code.InitializeUI(&g_game_state, &win32);
                 g_game_code.UpdateAndRender(&g_game_state, &win32);
             }
             

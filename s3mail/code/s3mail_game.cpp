@@ -1,34 +1,36 @@
 #include "s3mail_platform.h"
 
+internal bool32 reinit_ui = true;
+
 // UI update functions
 void UpdateButton(UIButton* btn, int mouse_x, int mouse_y, int mouse_down, int window_height, PlatformAPI* platform) {
     int gl_y = window_height - mouse_y;
-    btn->is_hovered = platform->Win32PointInRect(mouse_x, gl_y, btn->x, btn->y, btn->width, btn->height);
+    btn->is_hovered = platform->PointInRect(mouse_x, gl_y, btn->x, btn->y, btn->width, btn->height);
     btn->is_pressed = btn->is_hovered && mouse_down;
 }
 
 void RenderButton(UIButton* btn, PlatformAPI* platform) {
     if (btn->is_pressed) {
-        platform->Win32SetColor(0.2f, 0.2f, 0.6f);
+        platform->SetColor(0.2f, 0.2f, 0.6f);
     } else if (btn->is_hovered) {
-        platform->Win32SetColor(0.4f, 0.4f, 0.8f);
+        platform->SetColor(0.4f, 0.4f, 0.8f);
     } else {
-        platform->Win32SetColor(0.3f, 0.3f, 0.7f);
+        platform->SetColor(0.3f, 0.3f, 0.7f);
     }
     
-    platform->Win32DrawRect(btn->x, btn->y, btn->width, btn->height);
+    platform->DrawRect(btn->x, btn->y, btn->width, btn->height);
     
-    platform->Win32SetColor(0.0f, 0.0f, 0.0f);
-    platform->Win32DrawRectOutline(btn->x, btn->y, btn->width, btn->height);
+    platform->SetColor(0.0f, 0.0f, 0.0f);
+    platform->DrawRectOutline(btn->x, btn->y, btn->width, btn->height);
     
-    platform->Win32SetColor(1.0f, 1.0f, 1.0f);
-    platform->Win32DrawText(btn->text, btn->x + 5, btn->y + 8);
+    platform->SetColor(1.0f, 1.0f, 1.0f);
+    platform->DrawText(btn->text, btn->x + 5, btn->y + 8);
 }
 
 void UpdateList(UIList* list, int mouse_x, int mouse_y, int mouse_down, int window_height, PlatformAPI* platform) {
     int gl_y = window_height - mouse_y;
     
-    if (mouse_down && platform->Win32PointInRect(mouse_x, gl_y, list->x, list->y, list->width, list->height)) {
+    if (mouse_down && platform->PointInRect(mouse_x, gl_y, list->x, list->y, list->width, list->height)) {
         int item_height = 25;
         int clicked_item = (gl_y - list->y) / item_height;
         if (clicked_item >= 0 && clicked_item < list->item_count) {
@@ -39,12 +41,12 @@ void UpdateList(UIList* list, int mouse_x, int mouse_y, int mouse_down, int wind
 
 void RenderList(UIList* list, PlatformAPI* platform) {
     // Background
-    platform->Win32SetColor(0.9f, 0.9f, 0.9f);
-    platform->Win32DrawRect(list->x, list->y, list->width, list->height);
+    platform->SetColor(0.9f, 0.9f, 0.9f);
+    platform->DrawRect(list->x, list->y, list->width, list->height);
     
     // Border
-    platform->Win32SetColor(0.0f, 0.0f, 0.0f);
-    platform->Win32DrawRectOutline(list->x, list->y, list->width, list->height);
+    platform->SetColor(0.0f, 0.0f, 0.0f);
+    platform->DrawRectOutline(list->x, list->y, list->width, list->height);
     
     // Items
     int item_height = 25;
@@ -52,13 +54,41 @@ void RenderList(UIList* list, PlatformAPI* platform) {
         float item_y = list->y + i * item_height;
         
         if (i == list->selected_item) {
-            platform->Win32SetColor(0.5f, 0.7f, 1.0f);  // You can easily tweak these colors now!
-            platform->Win32DrawRect(list->x, item_y, list->width, item_height);
+            platform->SetColor(0.5f, 0.7f, 1.0f);  // You can easily tweak these colors now!
+            platform->DrawRect(list->x, item_y, list->width, item_height);
         }
         
-        platform->Win32SetColor(0.0f, 0.0f, 0.0f);
-        platform->Win32DrawText(list->items[i], list->x + 5, item_y + 5);
+        platform->SetColor(0.0f, 0.0f, 0.0f);
+        platform->DrawText(list->items[i], list->x + 5, item_y + 5);
     }
+}
+
+__declspec(dllexport)
+GAME_INITIALIZE_UI(GameInitializeUI)
+{
+    platform->ShowMessage("UpdateAndRender called!");
+    
+    bool32 Result = true;
+    if (state)
+    {
+        // NOTE(trist007): try using CW_USEDEFAULT
+        state->window_width = 1200;
+        state->window_height = 800;
+        
+        // Initialize UI elements
+        state->compose_button = {10, 635, 100, 30, "Compose", 0, 0};
+        state->delete_button = {120, 635, 100, 30, "Delete", 0, 0};
+        
+        state->folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 0};
+        state->email_list = {220, 40, 900, 580, {"Email 3", "Email 2", "Email 1"}, 3, -1};
+        state->contact_list = {10, 150, 200, 150, {"Papi", "Mom", "Glen", "Vito"}, 4, -1};
+    }
+    else
+    {
+        Result = false;
+    }
+    
+    return(Result);
 }
 
 // Main game functions that get hot reloaded
@@ -66,12 +96,16 @@ __declspec(dllexport)
 GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     // The platform layer will handle glClear for us
     
-    // Draw purple header stripe - try changing this color and recompiling!
-    platform->Win32SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
-    platform->Win32DrawRect(0, 675, 1200, 450);
+    //GameInitializeUI(state, platform);
     
-    platform->Win32SetColor(0.0f, 0.0f, 0.0f);
-    platform->Win32DrawRectOutline(0, 675, 1200, 450);
+    platform->ShowMessage("UpdateAndRender called!");
+    
+    // Draw purple header stripe - try changing this color and recompiling!
+    platform->SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
+    platform->DrawRect(0, 675, 1200, 450);
+    
+    platform->SetColor(0.0f, 0.0f, 0.0f);
+    platform->DrawRectOutline(0, 675, 1200, 450);
     
     // Update UI elements
     UpdateButton(&state->compose_button, state->mouse_x, state->mouse_y, state->mouse_down, state->window_height, platform);
@@ -91,21 +125,21 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     if (state->email_list.selected_item >= 0) {
         char preview_text[256];
         sprintf(preview_text, "Preview of %s - Hot Reloaded!", state->email_list.items[state->email_list.selected_item]);
-        platform->Win32DrawText(preview_text, 640, 320);
+        platform->DrawText(preview_text, 640, 320);
     }
     
     // Status bar
-    platform->Win32SetColor(0.8f, 0.8f, 0.8f);
-    platform->Win32DrawRect(0, 0, state->window_width, 25);
-    platform->Win32SetColor(0.0f, 0.0f, 0.0f);
-    platform->Win32DrawText("S3Mail - Hot Reloadable Ready!", 10, 8);
+    platform->SetColor(0.8f, 0.8f, 0.8f);
+    platform->DrawRect(0, 0, state->window_width, 25);
+    platform->SetColor(0.0f, 0.0f, 0.0f);
+    platform->DrawText("S3Mail - Hot Reloadable Ready!", 10, 8);
     
     // Handle button clicks
     if (state->compose_button.is_pressed) {
-        platform->Win32ShowMessage("Compose clicked from hot-reloaded DLL!");
+        platform->ShowMessage("Compose clicked from hot-reloaded DLL!");
     }
     if (state->delete_button.is_pressed) {
-        platform->Win32ShowMessage("Delete clicked from hot-reloaded DLL!");
+        platform->ShowMessage("Delete clicked from hot-reloaded DLL!");
     }
 }
 

@@ -13,7 +13,7 @@ echo WAITING FOR PDB > lock.tmp
 
 echo Building s3mail_game.dll...
 REM cl /LD /Zi /Od /nologo /I.. ..\s3mail_game.cpp /link /EXPORT:GameUpdateAndRender /EXPORT:GameHandleKeyPress /OUT:s3mail_game.dll
-cl %CommonCompilerFlags% ..\s3mail\code\s3mail_game.cpp /link /DLL -EXPORT:GameUpdateAndRender -EXPORT:GameHandleKeyPress -Out:s3mail_game.dll
+cl %CommonCompilerFlags% ..\s3mail\code\s3mail_game.cpp /link /DLL -EXPORT:GameUpdateAndRender -EXPORT:GameHandleKeyPress -EXPORT:GameInitializeUI -Out:s3mail_game.dll
 
 del lock.tmp
 
