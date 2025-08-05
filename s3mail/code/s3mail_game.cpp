@@ -1,4 +1,5 @@
 #include "s3mail_platform.h"
+#include <GL/gl.h>
 
 internal bool32 reinit_ui = true;
 
@@ -24,7 +25,7 @@ void RenderButton(UIButton* btn, PlatformAPI* platform) {
     platform->DrawRectOutline(btn->x, btn->y, btn->width, btn->height);
     
     platform->SetColor(1.0f, 1.0f, 1.0f);
-    platform->DrawText(btn->text, btn->x + 5, btn->y + 8);
+    platform->DrawText(platform->State, btn->text, btn->x + 5, btn->y + 8);
 }
 
 void UpdateList(UIList* list, int mouse_x, int mouse_y, int mouse_down, int window_height, PlatformAPI* platform) {
@@ -59,15 +60,13 @@ void RenderList(UIList* list, PlatformAPI* platform) {
         }
         
         platform->SetColor(0.0f, 0.0f, 0.0f);
-        platform->DrawText(list->items[i], list->x + 5, item_y + 5);
+        platform->DrawText(platform->State, list->items[i], list->x + 5, item_y + 5);
     }
 }
 
 __declspec(dllexport)
 GAME_INITIALIZE_UI(GameInitializeUI)
 {
-    platform->ShowMessage("UpdateAndRender called!");
-    
     bool32 Result = true;
     if (state)
     {
@@ -98,8 +97,6 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     
     //GameInitializeUI(state, platform);
     
-    platform->ShowMessage("UpdateAndRender called!");
-    
     // Draw purple header stripe - try changing this color and recompiling!
     platform->SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
     platform->DrawRect(0, 675, 1200, 450);
@@ -125,21 +122,21 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     if (state->email_list.selected_item >= 0) {
         char preview_text[256];
         sprintf(preview_text, "Preview of %s - Hot Reloaded!", state->email_list.items[state->email_list.selected_item]);
-        platform->DrawText(preview_text, 640, 320);
+        platform->DrawText(platform->State, preview_text, 640, 320);
     }
     
     // Status bar
     platform->SetColor(0.8f, 0.8f, 0.8f);
     platform->DrawRect(0, 0, state->window_width, 25);
     platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawText("S3Mail - Hot Reloadable Ready!", 10, 8);
+    platform->DrawText(platform->State, "S3Mail - Hot Reloadable Ready!", 10, 8);
     
     // Handle button clicks
     if (state->compose_button.is_pressed) {
-        platform->ShowMessage("Compose clicked from hot-reloaded DLL!");
+        platform->ShowMessage(platform->Window, "Compose clicked from hot-reloaded DLL!");
     }
     if (state->delete_button.is_pressed) {
-        platform->ShowMessage("Delete clicked from hot-reloaded DLL!");
+        platform->ShowMessage(platform->Window, "Delete clicked from hot-reloaded DLL!");
     }
 }
 
@@ -173,19 +170,5 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
             state->folder_list.selected_item++;
         }
         break;
-    }
-}
-
-__declspec(dllexport)
-GAME_HANDLE_MOUSE_MOVE(GameHandleMouseMove) {
-    state->mouse_x = x;
-    state->mouse_y = y;
-}
-
-__declspec(dllexport)
-GAME_HANDLE_MOUSE_BUTTON(GameHandleMouseMove) {
-    if (button == 1)
-    {
-        state->mouse_down = is_pressed;
     }
 }

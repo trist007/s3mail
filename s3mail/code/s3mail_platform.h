@@ -48,23 +48,7 @@ typedef struct {
     int item_count;
     int selected_item;
 } UIList;
-
-// Platform services provided by EXE to DLL
-typedef struct {
-    // Rendering functions
-    void (*SetColor)(float r, float g, float b);
-    void (*DrawRect)(float x, float y, float width, float height);
-    void (*DrawRectOutline)(float x, float y, float width, float height);
-    void (*DrawText)(const char* text, float x, float y);
-    
-    // Utility functions
-    int (*PointInRect)(int px, int py, float x, float y, float width, float height);
-    
-    // Platform functions
-    void (*ShowMessage)(const char *message);
-    void (*InvalidateWindow)(void);
-} PlatformAPI;
-
+//
 // Game state that persists across DLL reloads
 typedef struct {
     int window_width;
@@ -88,12 +72,31 @@ typedef struct {
     uint64 permanent_storage_size;
 } GameState;
 
+// Platform services provided by EXE to DLL
+typedef struct {
+    // Rendering functions
+    void (*SetColor)(float r, float g, float b);
+    void (*DrawRect)(float x, float y, float width, float height);
+    void (*DrawRectOutline)(float x, float y, float width, float height);
+    void (*DrawText)(GameState *state, const char* text, float x, float y);
+    void (*HandleResizey)(int width, int height);
+    
+    // Utility functions
+    int (*PointInRect)(int px, int py, float x, float y, float width, float height);
+    
+    // Platform functions
+    void (*ShowMessage)(HWND Window, const char *message);
+    void (*InvalidateWindow)(HWND Window);
+    
+    // Game state
+    GameState *State;
+    HWND Window;
+} PlatformAPI;
+
 // DLL interface - functions the DLL must export
 typedef struct {
     void (*UpdateAndRender)(GameState *state, PlatformAPI *platform);
     void (*HandleKeyPress)(GameState *state, int key_code);
-    void (*HandleMouseButton)(GameState *state, int key_code);
-    void (*HandleMouseMove)(GameState *state, int key_code);
     void (*InitializeUI)(GameState *state);
 } GameAPI;
 
@@ -119,8 +122,6 @@ typedef struct {
     FILETIME last_write_time;
     game_update_and_render *UpdateAndRender;
     game_handle_key_press *HandleKeyPress;
-    game_handle_mouse_button *HandleMouseButton;
-    game_handle_mouse_button *HandleMouseMove;
     game_initialize_ui *InitializeUI;
     bool32 is_valid;
 } Win32GameCode;

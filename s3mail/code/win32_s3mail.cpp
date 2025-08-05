@@ -2,6 +2,7 @@
 
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
+#include <GL/gl.h>
 
 global_variable bool32 GlobalRunning;
 
@@ -104,7 +105,7 @@ FILETIME Win32GetLastWriteTime(const char *filename)
     return Result;
 }
 
-Win32GameCode Win32LoadGameCode(const char *dll_path, const char *temp_dll_path, char *lock_filename)
+Win32GameCode Win32LoadGameCode(const char *dll_path, const char *temp_dll_path, const char *lock_filename)
 {
     Win32GameCode Result = {0};
     
@@ -120,8 +121,6 @@ Win32GameCode Win32LoadGameCode(const char *dll_path, const char *temp_dll_path,
         {
             Result.UpdateAndRender = (game_update_and_render*)GetProcAddress(Result.dll, "GameUpdateAndRender");
             Result.HandleKeyPress = (game_handle_key_press*)GetProcAddress(Result.dll, "GameHandleKeyPress");
-            Result.HandleMouseButton = (game_handle_mouse_button*)GetProcAddress(Result.dll, "GameHandleMouseButton");
-            Result.HandleMouseMove = (game_handle_mouse_move*)GetProcAddress(Result.dll, "GameHandleMouseMove");
             Result.InitializeUI = (game_initialize_ui*)GetProcAddress(Result.dll, "GameInitializeUI");
             Result.is_valid = (Result.UpdateAndRender && Result.HandleKeyPress && Result.InitializeUI);
         }
@@ -131,8 +130,6 @@ Win32GameCode Win32LoadGameCode(const char *dll_path, const char *temp_dll_path,
     {
         Result.UpdateAndRender = 0;
         Result.HandleKeyPress = 0;
-        Result.HandleMouseButton = 0;
-        Result.HandleMouseMove = 0;
         Result.InitializeUI = 0;
     }
     
@@ -149,8 +146,6 @@ void Win32UnloadGameCode(Win32GameCode *game_code)
     game_code->is_valid = false;
     game_code->UpdateAndRender = 0;
     game_code->HandleKeyPress = 0;
-    game_code->HandleMouseButton = 0;
-    game_code->HandleMouseMove = 0;
     game_code->InitializeUI = 0;
 }
 
@@ -218,10 +213,10 @@ int Win32InitFont(GameState *state, const char *font_path)
     stbtt_InitFont(&font, font_buffer, 0);
     
     font_bitmap = (unsigned char*)malloc(512*512);
-    stbtt_BakeFontBitmap(font_buffer, 0, 24.0f, font_bitmap, 512, 512, 32, 96, &state->cdata);
+    stbtt_BakeFontBitmap(font_buffer, 0, 24.0f, font_bitmap, 512, 512, 32, 96, state->cdata);
     
     glGenTextures(1, &state->font_texture_id);
-    glBindTexture(GL_TEXTURE_2D, &state->font_texture_id);
+    glBindTexture(GL_TEXTURE_2D, state->font_texture_id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512, 512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, font_bitmap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -230,12 +225,12 @@ int Win32InitFont(GameState *state, const char *font_path)
     return 1;
 }
 
-void Win32HandleResize(GameState state, int width, int height)
+void Win32HandleResizey(int width, int height)
 {
     if (height == 0) height = 1;
     
-    state.window_width = width;
-    state.window_height = height;
+    //state->window_width = width;
+    //state->window_height = height;
     
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
@@ -246,7 +241,7 @@ void Win32HandleResize(GameState state, int width, int height)
 }
 
 internal void
-Win32ProcessPendingMessages(Win32GameCode *gamecode, GameState *state)
+Win32ProcessPendingMessages(Win32GameCode *gamecode, GameState *state, PlatformAPI *platform)
 {
     MSG Message;
     while(PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
@@ -293,7 +288,6 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, GameState *state)
                         {
                             if(Message.hwnd)
                             {
-                                ToggleFullscreen(Message.hwnd);
                             }
                         }
                     }
@@ -303,31 +297,34 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, GameState *state)
             
             case WM_MOUSEMOVE:
             {
-                if(gamecode->is_valid && gamecode->HandleMouseMove)
-                {
-                    gamecode->HandleMouseMove(state, LOWORD(Message.lParam), HIWORD(Message.lParam));
-                }
+                state->mouse_x = LOWORD(Message.lParam);
+                state->mouse_y = HIWORD(Message.lParam);
+                
                 InvalidateRect(Message.hwnd, 0, FALSE);
             } break;
             
             case WM_LBUTTONDOWN:
             {
-                if(gamecode->is_valid && gamecode->HandleMouseButton)
-                {
-                    gamecode->HandleMouseButton(state, 1, 1); // button 1, pressed
-                }
+                state->mouse_down = 1;
+                SetCapture(Message.hwnd);
+                
                 InvalidateRect(Message.hwnd, 0, FALSE);
             } break;
             
             case WM_LBUTTONUP:
             {
-                if(gamecode->is_valid && gamecode->HandleMouseButton)
-                {
-                    gamecode->HandleMouseButton(state, 1, 0); // button 1, released
+                state->mouse_down = 0;
+                ReleaseCapture();
+                
+                // Handle button clicks
+                if (state->compose_button.is_pressed) {
+                    MessageBox(Message.hwnd, "Compose clicked!", "S3Mail", MB_OK);
+                }
+                if (state->delete_button.is_pressed) {
+                    MessageBox(Message.hwnd, "Delete clicked!", "S3Mail", MB_OK);
                 }
                 InvalidateRect(Message.hwnd, 0, FALSE);
             } break;
-            
             
             default:
             {
@@ -401,7 +398,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                                  "S3MailWindow",
                                  "S3Mail",
                                  WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                                 3000,
+                                 1000,
                                  200,
                                  1200,
                                  800,
@@ -414,6 +411,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     {
         
         if (!Win32InitOpenGL(Window)) return -1;
+        //Win32HandleResizey(state, state.window_width, state.window_height); 
+        Win32HandleResizey(1200, 800);
         if (!Win32InitFont(&state, "C:\\dev\\s3mail\\s3mail\\code\\fonts\\liberation-mono.ttf"))
         {
             MessageBox(Window, "Failed to load font", "Warning", MB_OK);
@@ -422,22 +421,25 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
         ShowWindow(Window, nCmdShow);
         UpdateWindow(Window);
         
-        GlobalRunning = true;
-        
-        if (gamecode.is_valid)
-        {
-            gamecode.InitializeUI(&state, &win32);
-        }
-        
         // Setup Platform API
         PlatformAPI win32 = {0};
         win32.SetColor = Win32SetColor;
         win32.DrawRect = Win32DrawRect;
         win32.DrawRectOutline = Win32DrawRectOutline;
         win32.DrawText = Win32DrawText;
+        win32.HandleResizey = Win32HandleResizey;
         win32.PointInRect = Win32PointInRect;
         win32.ShowMessage = Win32ShowMessage;
         win32.InvalidateWindow = Win32InvalidateWindow;
+        win32.State = &state;
+        win32.Window = Window;
+        
+        GlobalRunning = true;
+        
+        if (gamecode.is_valid)
+        {
+            gamecode.InitializeUI(&state, &win32);
+        }
         
         // main game loop
         while (GlobalRunning)
@@ -450,7 +452,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                 gamecode = Win32LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll", "lock.tmp");
             }
             
-            Win32ProcessPendingMessages(&gamecode, &state);
+            Win32ProcessPendingMessages(&gamecode, &state, &win32);
             
             // Call game code
             if (gamecode.is_valid)
@@ -460,8 +462,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                 SwapBuffers(g_hdc);
             }
         }
-        
-        Win32UnloadGameCode(&gamecode);
     }
     else
     {
