@@ -105,9 +105,81 @@ FILETIME Win32GetLastWriteTime(const char *filename)
     return Result;
 }
 
-Win32GameCode Win32LoadGameCode(const char *dll_path, const char *temp_dll_path, const char *lock_filename)
+internal Win32GameCode
+Win32LoadGameCode(char *dll_path, char *temp_dll_path, char *lock_filename)
 {
-    Win32GameCode Result = {0};
+    Win32GameCode Result = {};
+    char debug_msg[256];
+    
+    sprintf(debug_msg, "LoadGameCode: Checking for lock file: %s\n", lock_filename);
+    OutputDebugString(debug_msg);
+    
+    WIN32_FILE_ATTRIBUTE_DATA Ignored;
+    if(!GetFileAttributesEx(lock_filename, GetFileExInfoStandard, &Ignored))
+    {
+        OutputDebugString("LoadGameCode: No lock file found, proceeding with load\n");
+        
+        Result.last_write_time = Win32GetLastWriteTime(dll_path);
+        
+        BOOL copy_result = CopyFile(dll_path, temp_dll_path, FALSE);
+        sprintf(debug_msg, "LoadGameCode: CopyFile result: %d\n", copy_result);
+        OutputDebugString(debug_msg);
+        
+        Result.dll = LoadLibrary(temp_dll_path);
+        sprintf(debug_msg, "LoadGameCode: LoadLibrary result: %p\n", Result.dll);
+        OutputDebugString(debug_msg);
+        
+        if(Result.dll)
+        {
+            Result.UpdateAndRender = (game_update_and_render *)
+                GetProcAddress(Result.dll, "GameUpdateAndRender");
+            sprintf(debug_msg, "LoadGameCode: UpdateAndRender: %p\n", Result.UpdateAndRender);
+            OutputDebugString(debug_msg);
+            
+            Result.HandleKeyPress = (game_handle_key_press *)
+                GetProcAddress(Result.dll, "GameHandleKeyPress");
+            sprintf(debug_msg, "LoadGameCode: HandleKeyPress: %p\n", Result.HandleKeyPress);
+            OutputDebugString(debug_msg);
+            
+            Result.InitializeUI = (game_initialize_ui *)
+                GetProcAddress(Result.dll, "GameInitializeUI");
+            sprintf(debug_msg, "LoadGameCode: InitializeUI: %p\n", Result.InitializeUI);
+            OutputDebugString(debug_msg);
+            
+            Result.is_valid = (Result.UpdateAndRender &&
+                               Result.HandleKeyPress &&
+                               Result.InitializeUI);
+            sprintf(debug_msg, "LoadGameCode: is_valid: %d\n", Result.is_valid);
+            OutputDebugString(debug_msg);
+        }
+        else
+        {
+            DWORD error = GetLastError();
+            sprintf(debug_msg, "LoadGameCode: LoadLibrary failed with error: %d\n", error);
+            OutputDebugString(debug_msg);
+        }
+    }
+    else
+    {
+        OutputDebugString("LoadGameCode: Lock file exists, skipping load\n");
+    }
+    
+    if (!Result.is_valid)
+    {
+        OutputDebugString("LoadGameCode: Setting function pointers to null\n");
+        Result.UpdateAndRender = 0;
+        Result.HandleKeyPress = 0;
+        Result.InitializeUI = 0;
+    }
+    
+    return Result;
+}
+
+/*
+internal Win32GameCode
+Win32LoadGameCode(char *dll_path, char *temp_dll_path, char *lock_filename)
+{
+    Win32GameCode Result = {};
     
     WIN32_FILE_ATTRIBUTE_DATA Ignored;
     if(!GetFileAttributesEx(lock_filename, GetFileExInfoStandard, &Ignored))
@@ -119,10 +191,18 @@ Win32GameCode Win32LoadGameCode(const char *dll_path, const char *temp_dll_path,
         Result.dll = LoadLibrary(temp_dll_path);
         if(Result.dll)
         {
-            Result.UpdateAndRender = (game_update_and_render*)GetProcAddress(Result.dll, "GameUpdateAndRender");
-            Result.HandleKeyPress = (game_handle_key_press*)GetProcAddress(Result.dll, "GameHandleKeyPress");
-            Result.InitializeUI = (game_initialize_ui*)GetProcAddress(Result.dll, "GameInitializeUI");
-            Result.is_valid = (Result.UpdateAndRender && Result.HandleKeyPress && Result.InitializeUI);
+            Result.UpdateAndRender = (game_update_and_render *)
+                GetProcAddress(Result.dll, "GameUpdateAndRender");
+            
+            Result.HandleKeyPress = (game_handle_key_press *)
+                GetProcAddress(Result.dll, "GameHandleKeyPress");
+            
+            Result.InitializeUI = (game_initialize_ui *)
+                GetProcAddress(Result.dll, "GameInitializeUI");
+            
+            Result.is_valid = (Result.UpdateAndRender &&
+                               Result.HandleKeyPress &&
+                               Result.InitializeUI);
         }
     }
     
@@ -135,6 +215,7 @@ Win32GameCode Win32LoadGameCode(const char *dll_path, const char *temp_dll_path,
     
     return Result;
 }
+*/
 
 void Win32UnloadGameCode(Win32GameCode *game_code)
 {
@@ -150,6 +231,7 @@ void Win32UnloadGameCode(Win32GameCode *game_code)
 }
 
 // Initialize game state
+/*
 GameState Win32InitializeGameState()
 {
     GameState state = {0};
@@ -164,10 +246,11 @@ GameState Win32InitializeGameState()
     
     state.folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 0};
     state.email_list = {220, 40, 900, 580, {"Email 3", "Email 2", "Email 1"}, 3, -1};
-    state.contact_list = {10, 150, 200, 150, {"Papi", "Mom", "Glen", "Vito"}, 4, -1};
+    //state.contact_list = {10, 150, 200, 150, {"Papi", "Mom", "Glen", "Vito"}, 4, -1};
     
     return state;
 }
+*/
 
 // OpenGL and font initialization (same as before)
 int Win32InitOpenGL(HWND hwnd)
@@ -238,6 +321,68 @@ void Win32HandleResizey(int width, int height)
     glOrtho(0.0, width, 0.0, height, -1.0, 1.0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+}
+
+internal void
+Win32GetEXEFileName(win32_state *State)
+{
+    // NOTE(casey): Never use MAX_PATH in code that is user-facing, because it
+    // can be dangerous and lead to bad results.
+    DWORD SizeOfFilename = GetModuleFileNameA(0, State->EXEFileName, sizeof(State->EXEFileName));
+    State->OnePastLastEXEFileNameSlash = State->EXEFileName;
+    for(char *Scan = State->EXEFileName;
+        *Scan;
+        ++Scan)
+    {
+        if(*Scan == '\\')
+        {
+            State->OnePastLastEXEFileNameSlash = Scan + 1;
+        }
+    }
+}
+
+internal int
+StringLength(char *String)
+{
+    int Count = 0;
+    while(*String++)
+    {
+        ++Count;
+    }
+    return(Count);
+}
+
+internal void
+CatStrings(size_t SourceACount, char *SourceA,
+           size_t SourceBCount, char *SourceB,
+           size_t DestCount, char *Dest)
+{
+    // TODO(casey): Dest bounds checking!
+    
+    for(int Index = 0;
+        Index < SourceACount;
+        ++Index)
+    {
+        *Dest++ = *SourceA++;
+    }
+    
+    for(int Index = 0;
+        Index < SourceBCount;
+        ++Index)
+    {
+        *Dest++ = *SourceB++;
+    }
+    
+    *Dest++ = 0;
+}
+
+internal void
+Win32BuildEXEPathFileName(win32_state *State, char *FileName,
+                          int DestCount, char *Dest)
+{
+    CatStrings(State->OnePastLastEXEFileNameSlash - State->EXEFileName, State->EXEFileName,
+               StringLength(FileName), FileName,
+               DestCount, Dest);
 }
 
 internal void
@@ -378,11 +523,36 @@ Win32MainWindowCallback(HWND Window, UINT uMsg, WPARAM wParam, LPARAM lParam)
 int CALLBACK
 WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
+    win32_state Win32State = {};
+    
+    Win32GetEXEFileName(&Win32State);
+    
+    char SourceGameCodeDLLFullPath[WIN32_STATE_FILE_NAME_COUNT];
+    Win32BuildEXEPathFileName(&Win32State, "s3mail_game.dll",
+                              sizeof(SourceGameCodeDLLFullPath), SourceGameCodeDLLFullPath);
+    
+    char TempGameCodeDLLFullPath[WIN32_STATE_FILE_NAME_COUNT];
+    Win32BuildEXEPathFileName(&Win32State, "s3mail_game_temp.dll",
+                              sizeof(TempGameCodeDLLFullPath), TempGameCodeDLLFullPath);
+    
+    char GameCodeLockFullPath[WIN32_STATE_FILE_NAME_COUNT];
+    Win32BuildEXEPathFileName(&Win32State, "lock.tmp",
+                              sizeof(GameCodeLockFullPath), GameCodeLockFullPath);
+    
+    
     // Load initial game code
-    Win32GameCode gamecode = Win32LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll", "lock.tmp");
+    Win32GameCode gamecode = Win32LoadGameCode(SourceGameCodeDLLFullPath,
+                                               TempGameCodeDLLFullPath,
+                                               GameCodeLockFullPath);
     
     // Initialize GameState
-    GameState state = Win32InitializeGameState();
+    GameState state = {0};
+    //GameState state = Win32InitializeGameState();
+    
+    if (gamecode.is_valid)
+    {
+        gamecode.InitializeUI(&state);
+    }
     
     // Register and create window
     WNDCLASS wc = {0};
@@ -436,11 +606,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
         
         GlobalRunning = true;
         
-        if (gamecode.is_valid)
-        {
-            gamecode.InitializeUI(&state, &win32);
-        }
-        
         // main game loop
         while (GlobalRunning)
         {
@@ -449,7 +614,34 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
             if (CompareFileTime(&new_write_time, &gamecode.last_write_time) != 0)
             {
                 Win32UnloadGameCode(&gamecode);
+                memset(&state.compose_button, 0, sizeof(UIButton));
+                memset(&state.delete_button, 0, sizeof(UIButton));
+                memset(&state.folder_list, 0, sizeof(UIList));
+                memset(&state.email_list, 0, sizeof(UIList));
+                memset(&state.contact_list, 0, sizeof(UIList));
+                
+                // Wait for the lock file to be deleted (build to finish)
+                WIN32_FILE_ATTRIBUTE_DATA lockCheck;
+                int timeout = 0;
+                while (GetFileAttributesEx("lock.tmp", GetFileExInfoStandard, &lockCheck) && timeout < 100) {
+                    Sleep(50);  // Wait 50ms
+                    timeout++;
+                }
+                
                 gamecode = Win32LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll", "lock.tmp");
+                // Add some debugging to see what's happening
+                if (gamecode.is_valid) {
+                    if (gamecode.InitializeUI) {
+                        gamecode.InitializeUI(&state);
+                        // Maybe add a debug message here to confirm it ran
+                        OutputDebugString("Successfully reinitialized UI after DLL reload\n");
+                    } else {
+                        OutputDebugString("ERROR: InitializeUI is null after DLL reload\n");
+                    }
+                } else {
+                    OutputDebugString("ERROR: DLL reload failed - gamecode not valid\n");
+                }
+                //gamecode.InitializeUI(&state);
             }
             
             Win32ProcessPendingMessages(&gamecode, &state, &win32);
@@ -457,10 +649,33 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
             // Call game code
             if (gamecode.is_valid)
             {
+                // Debug: Check contact list before UpdateAndRender
+                if (state.contact_list.item_count > 0) {
+                    char debug_msg[256];
+                    sprintf(debug_msg, "BEFORE UpdateAndRender - Contact[0]: '%s'\n", state.contact_list.items[0]);
+                    OutputDebugString(debug_msg);
+                }
+                
+                glClear(GL_COLOR_BUFFER_BIT);
+                gamecode.UpdateAndRender(&state, &win32);
+                
+                // Debug: Check contact list after UpdateAndRender
+                if (state.contact_list.item_count > 0) {
+                    char debug_msg[256];
+                    sprintf(debug_msg, "AFTER UpdateAndRender - Contact[0]: '%s'\n", state.contact_list.items[0]);
+                    OutputDebugString(debug_msg);
+                }
+                
+                SwapBuffers(g_hdc);
+            }
+            /*
+            if (gamecode.is_valid)
+            {
                 glClear(GL_COLOR_BUFFER_BIT);
                 gamecode.UpdateAndRender(&state, &win32);
                 SwapBuffers(g_hdc);
             }
+            */
         }
     }
     else

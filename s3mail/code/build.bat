@@ -19,6 +19,6 @@ del lock.tmp
 
 REM echo Building s3mail.exe
 REM cl /Zi /Od /nologo /I.. ..\s3mail.c opengl32.lib gdi32.lib user32.lib kernel32.lib /Fe:s3mail.exe
-cl %CommonCompilerFlags% ..\s3mail\code\win32_s3mail.cpp -Fmwin32_s3mail.map /link  %CommonLinkerFlags%
+REM cl %CommonCompilerFlags% ..\s3mail\code\win32_s3mail.cpp -Fmwin32_s3mail.map /link  %CommonLinkerFlags%
 
 popd

@@ -72,6 +72,13 @@ typedef struct {
     uint64 permanent_storage_size;
 } GameState;
 
+#define WIN32_STATE_FILE_NAME_COUNT MAX_PATH
+struct win32_state
+{
+    char EXEFileName[WIN32_STATE_FILE_NAME_COUNT];
+    char *OnePastLastEXEFileNameSlash;
+};
+
 // Platform services provided by EXE to DLL
 typedef struct {
     // Rendering functions
@@ -107,13 +114,7 @@ typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 #define GAME_HANDLE_KEY_PRESS(name) void name(GameState *state, int key_code)
 typedef GAME_HANDLE_KEY_PRESS(game_handle_key_press);
 
-#define GAME_HANDLE_MOUSE_BUTTON(name) void name(GameState *state, int key_code)
-typedef GAME_HANDLE_MOUSE_BUTTON(game_handle_mouse_button);
-
-#define GAME_HANDLE_MOUSE_MOVE(name) void name(GameState *state, int key_code)
-typedef GAME_HANDLE_MOUSE_MOVE(game_handle_mouse_move);
-
-#define GAME_INITIALIZE_UI(name) bool32 name(GameState *state, PlatformAPI* platform)
+#define GAME_INITIALIZE_UI(name) void name(GameState *state)
 typedef GAME_INITIALIZE_UI(game_initialize_ui);
 
 // DLL hot reloading
