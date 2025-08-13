@@ -99,22 +99,13 @@ FILETIME Win32GetLastWriteTime(const char *filename)
     WIN32_FILE_ATTRIBUTE_DATA data;
     FILETIME Result = {0};
     
-    char debug_msg[256];
-    sprintf(debug_msg, "GetLastWriteTime: Checking file '%s'\n", filename);
-    OutputDebugString(debug_msg);
-    
-    
     if (GetFileAttributesEx(filename, GetFileExInfoStandard, &data))
     {
         Result = data.ftLastWriteTime;
-        sprintf(debug_msg, "GetLastWriteTime: SUCCESS - timestamp=%I64u\n", *(uint64*)&Result);
-        OutputDebugString(debug_msg);
     }
     else
     {
         DWORD error = GetLastError();
-        sprintf(debug_msg, "GetLastWriteTime: FAILED - error=%d\n", error);
-        OutputDebugString(debug_msg);
     }
     
     return Result;
@@ -124,64 +115,42 @@ internal Win32GameCode
 Win32LoadGameCode(char *dll_path, char *temp_dll_path, char *lock_filename)
 {
     Win32GameCode Result = {};
-    char debug_msg[256];
-    
-    sprintf(debug_msg, "LoadGameCode: Checking for lock file: %s\n", lock_filename);
-    OutputDebugString(debug_msg);
     
     WIN32_FILE_ATTRIBUTE_DATA Ignored;
     if(!GetFileAttributesEx(lock_filename, GetFileExInfoStandard, &Ignored))
     {
-        OutputDebugString("LoadGameCode: No lock file found, proceeding with load\n");
-        
         Result.last_write_time = Win32GetLastWriteTime(dll_path);
         
         BOOL copy_result = CopyFile(dll_path, temp_dll_path, FALSE);
-        sprintf(debug_msg, "LoadGameCode: CopyFile result: %d\n", copy_result);
-        OutputDebugString(debug_msg);
         
         Result.dll = LoadLibrary(temp_dll_path);
-        sprintf(debug_msg, "LoadGameCode: LoadLibrary result: %p\n", Result.dll);
-        OutputDebugString(debug_msg);
         
         if(Result.dll)
         {
             Result.UpdateAndRender = (game_update_and_render *)
                 GetProcAddress(Result.dll, "GameUpdateAndRender");
-            sprintf(debug_msg, "LoadGameCode: UpdateAndRender: %p\n", Result.UpdateAndRender);
-            OutputDebugString(debug_msg);
             
             Result.HandleKeyPress = (game_handle_key_press *)
                 GetProcAddress(Result.dll, "GameHandleKeyPress");
-            sprintf(debug_msg, "LoadGameCode: HandleKeyPress: %p\n", Result.HandleKeyPress);
-            OutputDebugString(debug_msg);
             
             Result.InitializeUI = (game_initialize_ui *)
                 GetProcAddress(Result.dll, "GameInitializeUI");
-            sprintf(debug_msg, "LoadGameCode: InitializeUI: %p\n", Result.InitializeUI);
-            OutputDebugString(debug_msg);
             
             Result.is_valid = (Result.UpdateAndRender &&
                                Result.HandleKeyPress &&
                                Result.InitializeUI);
-            sprintf(debug_msg, "LoadGameCode: is_valid: %d\n", Result.is_valid);
-            OutputDebugString(debug_msg);
         }
         else
         {
             DWORD error = GetLastError();
-            sprintf(debug_msg, "LoadGameCode: LoadLibrary failed with error: %d\n", error);
-            OutputDebugString(debug_msg);
         }
     }
     else
     {
-        OutputDebugString("LoadGameCode: Lock file exists, skipping load\n");
     }
     
     if (!Result.is_valid)
     {
-        OutputDebugString("LoadGameCode: Setting function pointers to null\n");
         Result.UpdateAndRender = 0;
         Result.HandleKeyPress = 0;
         Result.InitializeUI = 0;
@@ -604,7 +573,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     
     if (gamecode.is_valid)
     {
-        gamecode.InitializeUI(&state, &win32);
+        gamecode.InitializeUI(&state);
     }
     
     
@@ -629,53 +598,19 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
         // main game loop
         while (GlobalRunning)
         {
-            // Check if file exists
-            char debug_msg[256];
-            WIN32_FILE_ATTRIBUTE_DATA fileData;
-            if (GetFileAttributesEx(SourceGameCodeDLLFullPath, GetFileExInfoStandard, &fileData)) {
-                sprintf(debug_msg, "File exists! Size: %d bytes\n", fileData.nFileSizeLow);
-                OutputDebugString(debug_msg);
-            } else {
-                DWORD error = GetLastError();
-                sprintf(debug_msg, "FILE NOT FOUND! Error: %d\n", error);
-                OutputDebugString(debug_msg);
-            }
-            
             // Check for DLL reload
             FILETIME new_write_time = Win32GetLastWriteTime(SourceGameCodeDLLFullPath);
-            
-            // Add this debug output
-            sprintf(debug_msg, "Checking DLL: old_time=%I64u, new_time=%I64u\n", 
-                    *(uint64*)&gamecode.last_write_time, *(uint64*)&new_write_time);
-            OutputDebugString(debug_msg);
-            
             if (CompareFileTime(&new_write_time, &gamecode.last_write_time) != 0)
             {
-                OutputDebugString("DLL TIMESTAMP CHANGED - Starting reload...\n");
-                
                 Win32UnloadGameCode(&gamecode);
-                
-                // Wait for the lock file to be deleted (build to finish)
-                WIN32_FILE_ATTRIBUTE_DATA lockCheck;
-                int timeout = 0;
-                while (GetFileAttributesEx(GameCodeLockFullPath, GetFileExInfoStandard, &lockCheck) && timeout < 100) {
-                    sprintf(debug_msg, "Waiting for lock file to disappear... timeout=%d\n", timeout);
-                    OutputDebugString(debug_msg);
-                    Sleep(50);
-                    timeout++;
-                }
-                
-                OutputDebugString("Attempting to load new DLL...\n");
                 
                 gamecode = Win32LoadGameCode(SourceGameCodeDLLFullPath,
                                              TempGameCodeDLLFullPath,
                                              GameCodeLockFullPath);
-                LoadCounter = 1;
-                
                 // Add some debugging to see what's happening
-                if (gamecode.is_valid && LoadCounter) {
+                if (gamecode.is_valid) {
                     if (gamecode.InitializeUI) {
-                        gamecode.InitializeUI(&state, &win32);
+                        gamecode.InitializeUI(&state);
                         // Maybe add a debug message here to confirm it ran
                         OutputDebugString("Successfully reinitialized UI after DLL reload\n");
                     } else {
@@ -691,22 +626,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
             // Call game code
             if (gamecode.is_valid)
             {
-                // Debug: Check contact list before UpdateAndRender
-                if (state.contact_list.item_count > 0) {
-                    char debug_msg[256];
-                    sprintf(debug_msg, "BEFORE UpdateAndRender - Contact[2]: '%s'\n", state.contact_list.items[2]);
-                    OutputDebugString(debug_msg);
-                }
-                
                 glClear(GL_COLOR_BUFFER_BIT);
                 gamecode.UpdateAndRender(&state, &win32);
-                
-                // Debug: Check contact list after UpdateAndRender
-                if (state.contact_list.item_count > 0) {
-                    char debug_msg[256];
-                    sprintf(debug_msg, "AFTER UpdateAndRender - Contact[2]: '%s'\n", state.contact_list.items[2]);
-                    OutputDebugString(debug_msg);
-                }
                 SwapBuffers(g_hdc);
             }
             

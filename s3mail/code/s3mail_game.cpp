@@ -67,13 +67,6 @@ void RenderList(UIList* list, PlatformAPI* platform) {
 __declspec(dllexport)
 GAME_INITIALIZE_UI(GameInitializeUI)
 {
-    OutputDebugString("=== GameInitializeUI CALLED ===\n");
-    local_persist const char *compile_time = __TIME__;
-    
-    char debug_display[256];
-    sprintf(debug_display, "Compiled: %s", compile_time);
-    platform->DrawText(platform->State, debug_display, 10, 50);
-    
     if (state)
     {
         // NOTE(trist007): try using CW_USEDEFAULT
@@ -86,18 +79,8 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         
         state->folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 0};
         state->email_list = {220, 40, 900, 580, {"Email 3", "Email 2", "Email 1"}, 3, -1};
-        state->contact_list = {10, 150, 200, 150, {"Papi", "Mom", "Glenn", "Vito"}, 4, -1};
-        
-        OutputDebugString("GameInitializeUI: Contact list reinitialized\n");
-        
-        
-        // Debug output
-        char debug_msg[256];
-        sprintf(debug_msg, "GameInitializeUI set contact[2] to: '%s'\n", state->contact_list.items[2]);
-        OutputDebugString(debug_msg);
+        state->contact_list = {10, 150, 200, 150, {"Papi", "Mom", "Glen", "Vito"}, 4, -1};
     }
-    
-    OutputDebugString("=== GameInitializeUI COMPLETE ===\n");
 }
 
 // Main game functions that get hot reloaded

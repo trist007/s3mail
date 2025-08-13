@@ -104,7 +104,7 @@ typedef struct {
 typedef struct {
     void (*UpdateAndRender)(GameState *state, PlatformAPI *platform);
     void (*HandleKeyPress)(GameState *state, int key_code);
-    void (*InitializeUI)(GameState *state, PlatformAPI *platform);
+    void (*InitializeUI)(GameState *state);
 } GameAPI;
 
 // DLL export signature
@@ -114,7 +114,7 @@ typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 #define GAME_HANDLE_KEY_PRESS(name) void name(GameState *state, int key_code)
 typedef GAME_HANDLE_KEY_PRESS(game_handle_key_press);
 
-#define GAME_INITIALIZE_UI(name) void name(GameState *state, PlatformAPI* platform)
+#define GAME_INITIALIZE_UI(name) void name(GameState *state)
 typedef GAME_INITIALIZE_UI(game_initialize_ui);
 
 // DLL hot reloading
