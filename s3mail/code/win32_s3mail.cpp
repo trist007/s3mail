@@ -7,8 +7,8 @@
 global_variable bool32 GlobalRunning;
 
 // Platform state
-static HDC g_hdc = 0;
-static HGLRC g_hglrc = 0;
+global_variable HDC g_hdc = 0;
+global_variable HGLRC g_hglrc = 0;
 
 // Platform API implementation
 void Win32SetColor(float r, float g, float b)
@@ -98,10 +98,25 @@ FILETIME Win32GetLastWriteTime(const char *filename)
 {
     WIN32_FILE_ATTRIBUTE_DATA data;
     FILETIME Result = {0};
+    
+    char debug_msg[256];
+    sprintf(debug_msg, "GetLastWriteTime: Checking file '%s'\n", filename);
+    OutputDebugString(debug_msg);
+    
+    
     if (GetFileAttributesEx(filename, GetFileExInfoStandard, &data))
     {
         Result = data.ftLastWriteTime;
+        sprintf(debug_msg, "GetLastWriteTime: SUCCESS - timestamp=%I64u\n", *(uint64*)&Result);
+        OutputDebugString(debug_msg);
     }
+    else
+    {
+        DWORD error = GetLastError();
+        sprintf(debug_msg, "GetLastWriteTime: FAILED - error=%d\n", error);
+        OutputDebugString(debug_msg);
+    }
+    
     return Result;
 }
 
@@ -546,16 +561,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                                                GameCodeLockFullPath);
     
     // Initialize GameState
-    GameState state = {0};
+    GameState state = {};
     //GameState state = Win32InitializeGameState();
     
-    if (gamecode.is_valid)
-    {
-        gamecode.InitializeUI(&state);
-    }
-    
     // Register and create window
-    WNDCLASS wc = {0};
+    WNDCLASS wc = {};
     wc.lpfnWndProc = Win32MainWindowCallback;
     wc.hInstance = hInstance;
     wc.lpszClassName = "S3MailWindow";
@@ -577,6 +587,27 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                                  hInstance,
                                  0);
     
+    
+    // Setup Platform API
+    PlatformAPI win32 = {};
+    win32.SetColor = Win32SetColor;
+    win32.DrawRect = Win32DrawRect;
+    win32.DrawRectOutline = Win32DrawRectOutline;
+    win32.DrawText = Win32DrawText;
+    win32.HandleResizey = Win32HandleResizey;
+    win32.PointInRect = Win32PointInRect;
+    win32.ShowMessage = Win32ShowMessage;
+    win32.InvalidateWindow = Win32InvalidateWindow;
+    win32.State = &state;
+    win32.Window = Window;
+    
+    
+    if (gamecode.is_valid)
+    {
+        gamecode.InitializeUI(&state, &win32);
+    }
+    
+    
     if (Window)
     {
         
@@ -591,48 +622,60 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
         ShowWindow(Window, nCmdShow);
         UpdateWindow(Window);
         
-        // Setup Platform API
-        PlatformAPI win32 = {0};
-        win32.SetColor = Win32SetColor;
-        win32.DrawRect = Win32DrawRect;
-        win32.DrawRectOutline = Win32DrawRectOutline;
-        win32.DrawText = Win32DrawText;
-        win32.HandleResizey = Win32HandleResizey;
-        win32.PointInRect = Win32PointInRect;
-        win32.ShowMessage = Win32ShowMessage;
-        win32.InvalidateWindow = Win32InvalidateWindow;
-        win32.State = &state;
-        win32.Window = Window;
-        
         GlobalRunning = true;
+        
+        uint32 LoadCounter = 0;
         
         // main game loop
         while (GlobalRunning)
         {
+            // Check if file exists
+            char debug_msg[256];
+            WIN32_FILE_ATTRIBUTE_DATA fileData;
+            if (GetFileAttributesEx(SourceGameCodeDLLFullPath, GetFileExInfoStandard, &fileData)) {
+                sprintf(debug_msg, "File exists! Size: %d bytes\n", fileData.nFileSizeLow);
+                OutputDebugString(debug_msg);
+            } else {
+                DWORD error = GetLastError();
+                sprintf(debug_msg, "FILE NOT FOUND! Error: %d\n", error);
+                OutputDebugString(debug_msg);
+            }
+            
             // Check for DLL reload
-            FILETIME new_write_time = Win32GetLastWriteTime("s3mail_game.dll");
+            FILETIME new_write_time = Win32GetLastWriteTime(SourceGameCodeDLLFullPath);
+            
+            // Add this debug output
+            sprintf(debug_msg, "Checking DLL: old_time=%I64u, new_time=%I64u\n", 
+                    *(uint64*)&gamecode.last_write_time, *(uint64*)&new_write_time);
+            OutputDebugString(debug_msg);
+            
             if (CompareFileTime(&new_write_time, &gamecode.last_write_time) != 0)
             {
+                OutputDebugString("DLL TIMESTAMP CHANGED - Starting reload...\n");
+                
                 Win32UnloadGameCode(&gamecode);
-                memset(&state.compose_button, 0, sizeof(UIButton));
-                memset(&state.delete_button, 0, sizeof(UIButton));
-                memset(&state.folder_list, 0, sizeof(UIList));
-                memset(&state.email_list, 0, sizeof(UIList));
-                memset(&state.contact_list, 0, sizeof(UIList));
                 
                 // Wait for the lock file to be deleted (build to finish)
                 WIN32_FILE_ATTRIBUTE_DATA lockCheck;
                 int timeout = 0;
-                while (GetFileAttributesEx("lock.tmp", GetFileExInfoStandard, &lockCheck) && timeout < 100) {
-                    Sleep(50);  // Wait 50ms
+                while (GetFileAttributesEx(GameCodeLockFullPath, GetFileExInfoStandard, &lockCheck) && timeout < 100) {
+                    sprintf(debug_msg, "Waiting for lock file to disappear... timeout=%d\n", timeout);
+                    OutputDebugString(debug_msg);
+                    Sleep(50);
                     timeout++;
                 }
                 
-                gamecode = Win32LoadGameCode("s3mail_game.dll", "s3mail_game_temp.dll", "lock.tmp");
+                OutputDebugString("Attempting to load new DLL...\n");
+                
+                gamecode = Win32LoadGameCode(SourceGameCodeDLLFullPath,
+                                             TempGameCodeDLLFullPath,
+                                             GameCodeLockFullPath);
+                LoadCounter = 1;
+                
                 // Add some debugging to see what's happening
-                if (gamecode.is_valid) {
+                if (gamecode.is_valid && LoadCounter) {
                     if (gamecode.InitializeUI) {
-                        gamecode.InitializeUI(&state);
+                        gamecode.InitializeUI(&state, &win32);
                         // Maybe add a debug message here to confirm it ran
                         OutputDebugString("Successfully reinitialized UI after DLL reload\n");
                     } else {
@@ -644,7 +687,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                 //gamecode.InitializeUI(&state);
             }
             
-            Win32ProcessPendingMessages(&gamecode, &state, &win32);
             
             // Call game code
             if (gamecode.is_valid)
@@ -652,7 +694,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                 // Debug: Check contact list before UpdateAndRender
                 if (state.contact_list.item_count > 0) {
                     char debug_msg[256];
-                    sprintf(debug_msg, "BEFORE UpdateAndRender - Contact[0]: '%s'\n", state.contact_list.items[0]);
+                    sprintf(debug_msg, "BEFORE UpdateAndRender - Contact[2]: '%s'\n", state.contact_list.items[2]);
                     OutputDebugString(debug_msg);
                 }
                 
@@ -662,20 +704,21 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                 // Debug: Check contact list after UpdateAndRender
                 if (state.contact_list.item_count > 0) {
                     char debug_msg[256];
-                    sprintf(debug_msg, "AFTER UpdateAndRender - Contact[0]: '%s'\n", state.contact_list.items[0]);
+                    sprintf(debug_msg, "AFTER UpdateAndRender - Contact[2]: '%s'\n", state.contact_list.items[2]);
                     OutputDebugString(debug_msg);
                 }
-                
                 SwapBuffers(g_hdc);
             }
+            
+            Win32ProcessPendingMessages(&gamecode, &state, &win32);
             /*
-            if (gamecode.is_valid)
-            {
-                glClear(GL_COLOR_BUFFER_BIT);
-                gamecode.UpdateAndRender(&state, &win32);
-                SwapBuffers(g_hdc);
-            }
-            */
+                        if (gamecode.is_valid)
+                        {
+                            glClear(GL_COLOR_BUFFER_BIT);
+                            gamecode.UpdateAndRender(&state, &win32);
+                            SwapBuffers(g_hdc);
+                        }
+                        */
         }
     }
     else

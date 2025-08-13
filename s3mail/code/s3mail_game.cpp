@@ -67,7 +67,13 @@ void RenderList(UIList* list, PlatformAPI* platform) {
 __declspec(dllexport)
 GAME_INITIALIZE_UI(GameInitializeUI)
 {
-    //bool32 Result = true;
+    OutputDebugString("=== GameInitializeUI CALLED ===\n");
+    local_persist const char *compile_time = __TIME__;
+    
+    char debug_display[256];
+    sprintf(debug_display, "Compiled: %s", compile_time);
+    platform->DrawText(platform->State, debug_display, 10, 50);
+    
     if (state)
     {
         // NOTE(trist007): try using CW_USEDEFAULT
@@ -80,11 +86,14 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         
         state->folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 0};
         state->email_list = {220, 40, 900, 580, {"Email 3", "Email 2", "Email 1"}, 3, -1};
-        state->contact_list = {10, 150, 200, 150, {"Pappi", "Mom", "Glenn", "Vito"}, 4, -1};
+        state->contact_list = {10, 150, 200, 150, {"Papi", "Mom", "Glenn", "Vito"}, 4, -1};
+        
+        OutputDebugString("GameInitializeUI: Contact list reinitialized\n");
+        
         
         // Debug output
         char debug_msg[256];
-        sprintf(debug_msg, "GameInitializeUI set contact[0] to: '%s'\n", state->contact_list.items[0]);
+        sprintf(debug_msg, "GameInitializeUI set contact[2] to: '%s'\n", state->contact_list.items[2]);
         OutputDebugString(debug_msg);
     }
     
@@ -94,9 +103,6 @@ GAME_INITIALIZE_UI(GameInitializeUI)
 // Main game functions that get hot reloaded
 __declspec(dllexport)
 GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
-    // The platform layer will handle glClear for us
-    
-    //GameInitializeUI(state, platform);
     
     // Draw purple header stripe - try changing this color and recompiling!
     platform->SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
