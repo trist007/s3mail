@@ -70,7 +70,7 @@ typedef struct {
     // Memory
     void *permanent_storage;
     uint64 permanent_storage_size;
-} GameState;
+} game_state;
 
 #define WIN32_STATE_FILE_NAME_COUNT MAX_PATH
 struct win32_state
@@ -85,7 +85,7 @@ typedef struct {
     void (*SetColor)(float r, float g, float b);
     void (*DrawRect)(float x, float y, float width, float height);
     void (*DrawRectOutline)(float x, float y, float width, float height);
-    void (*DrawText)(GameState *state, const char* text, float x, float y);
+    void (*DrawText)(game_state *GameState, const char* text, float x, float y);
     void (*HandleResizey)(int width, int height);
     
     // Utility functions
@@ -96,25 +96,25 @@ typedef struct {
     void (*InvalidateWindow)(HWND Window);
     
     // Game state
-    GameState *State;
+    game_state *GameState;
     HWND Window;
 } PlatformAPI;
 
 // DLL interface - functions the DLL must export
 typedef struct {
-    void (*UpdateAndRender)(GameState *state, PlatformAPI *platform);
-    void (*HandleKeyPress)(GameState *state, int key_code);
-    void (*InitializeUI)(GameState *state);
+    void (*UpdateAndRender)(game_state *GameState, PlatformAPI *platform);
+    void (*HandleKeyPress)(game_state *GameState, int key_code);
+    void (*InitializeUI)(game_state *GameState);
 } GameAPI;
 
 // DLL export signature
-#define GAME_UPDATE_AND_RENDER(name) void name(GameState *state, PlatformAPI* platform)
+#define GAME_UPDATE_AND_RENDER(name) void name(game_state *GameState, PlatformAPI* platform)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 
-#define GAME_HANDLE_KEY_PRESS(name) void name(GameState *state, int key_code)
+#define GAME_HANDLE_KEY_PRESS(name) void name(game_state *GameState, int key_code)
 typedef GAME_HANDLE_KEY_PRESS(game_handle_key_press);
 
-#define GAME_INITIALIZE_UI(name) void name(GameState *state)
+#define GAME_INITIALIZE_UI(name) void name(game_state *GameState)
 typedef GAME_INITIALIZE_UI(game_initialize_ui);
 
 // DLL hot reloading

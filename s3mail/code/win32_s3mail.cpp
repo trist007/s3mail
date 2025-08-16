@@ -36,12 +36,12 @@ void Win32DrawRectOutline(float x, float y, float width, float height)
     glEnd();
 }
 
-void Win32DrawText(GameState *state, const char *text, float x, float y)
+void Win32DrawText(game_state *GameState, const char *text, float x, float y)
 {
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glBindTexture(GL_TEXTURE_2D, state->font_texture_id);
+    glBindTexture(GL_TEXTURE_2D, GameState->font_texture_id);
     
     float current_x = x;
     float current_y = y;
@@ -54,7 +54,7 @@ void Win32DrawText(GameState *state, const char *text, float x, float y)
         if (text[i] >= 32 && text[i] < 128)
         {
             stbtt_aligned_quad q;
-            stbtt_GetBakedQuad(state->cdata,
+            stbtt_GetBakedQuad(GameState->cdata,
                                512,
                                512,
                                text[i] - 32,
@@ -159,48 +159,6 @@ Win32LoadGameCode(char *dll_path, char *temp_dll_path, char *lock_filename)
     return Result;
 }
 
-/*
-internal Win32GameCode
-Win32LoadGameCode(char *dll_path, char *temp_dll_path, char *lock_filename)
-{
-    Win32GameCode Result = {};
-    
-    WIN32_FILE_ATTRIBUTE_DATA Ignored;
-    if(!GetFileAttributesEx(lock_filename, GetFileExInfoStandard, &Ignored))
-    {
-        Result.last_write_time = Win32GetLastWriteTime(dll_path);
-        
-        CopyFile(dll_path, temp_dll_path, FALSE);
-        
-        Result.dll = LoadLibrary(temp_dll_path);
-        if(Result.dll)
-        {
-            Result.UpdateAndRender = (game_update_and_render *)
-                GetProcAddress(Result.dll, "GameUpdateAndRender");
-            
-            Result.HandleKeyPress = (game_handle_key_press *)
-                GetProcAddress(Result.dll, "GameHandleKeyPress");
-            
-            Result.InitializeUI = (game_initialize_ui *)
-                GetProcAddress(Result.dll, "GameInitializeUI");
-            
-            Result.is_valid = (Result.UpdateAndRender &&
-                               Result.HandleKeyPress &&
-                               Result.InitializeUI);
-        }
-    }
-    
-    if (!Result.is_valid)
-    {
-        Result.UpdateAndRender = 0;
-        Result.HandleKeyPress = 0;
-        Result.InitializeUI = 0;
-    }
-    
-    return Result;
-}
-*/
-
 void Win32UnloadGameCode(Win32GameCode *game_code)
 {
     if (game_code->dll)
@@ -213,28 +171,6 @@ void Win32UnloadGameCode(Win32GameCode *game_code)
     game_code->HandleKeyPress = 0;
     game_code->InitializeUI = 0;
 }
-
-// Initialize game state
-/*
-GameState Win32InitializeGameState()
-{
-    GameState state = {0};
-    
-    // NOTE(trist007): try using CW_USEDEFAULT
-    state.window_width = 1200;
-    state.window_height = 800;
-    
-    // Initialize UI elements
-    state.compose_button = {10, 635, 100, 30, "Compose", 0, 0};
-    state.delete_button = {120, 635, 100, 30, "Delete", 0, 0};
-    
-    state.folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 0};
-    state.email_list = {220, 40, 900, 580, {"Email 3", "Email 2", "Email 1"}, 3, -1};
-    //state.contact_list = {10, 150, 200, 150, {"Papi", "Mom", "Glen", "Vito"}, 4, -1};
-    
-    return state;
-}
-*/
 
 // OpenGL and font initialization (same as before)
 int Win32InitOpenGL(HWND hwnd)
@@ -264,7 +200,7 @@ int Win32InitOpenGL(HWND hwnd)
     return 1;
 }
 
-int Win32InitFont(GameState *state, const char *font_path)
+int Win32InitFont(game_state *GameState, const char *font_path)
 {
     static unsigned char font_buffer[1024*1024];
     static unsigned char *font_bitmap;
@@ -280,10 +216,10 @@ int Win32InitFont(GameState *state, const char *font_path)
     stbtt_InitFont(&font, font_buffer, 0);
     
     font_bitmap = (unsigned char*)malloc(512*512);
-    stbtt_BakeFontBitmap(font_buffer, 0, 24.0f, font_bitmap, 512, 512, 32, 96, state->cdata);
+    stbtt_BakeFontBitmap(font_buffer, 0, 24.0f, font_bitmap, 512, 512, 32, 96, GameState->cdata);
     
-    glGenTextures(1, &state->font_texture_id);
-    glBindTexture(GL_TEXTURE_2D, state->font_texture_id);
+    glGenTextures(1, &GameState->font_texture_id);
+    glBindTexture(GL_TEXTURE_2D, GameState->font_texture_id);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512, 512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, font_bitmap);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -308,19 +244,19 @@ void Win32HandleResizey(int width, int height)
 }
 
 internal void
-Win32GetEXEFileName(win32_state *State)
+Win32GetEXEFileName(win32_state *GameState)
 {
     // NOTE(casey): Never use MAX_PATH in code that is user-facing, because it
     // can be dangerous and lead to bad results.
-    DWORD SizeOfFilename = GetModuleFileNameA(0, State->EXEFileName, sizeof(State->EXEFileName));
-    State->OnePastLastEXEFileNameSlash = State->EXEFileName;
-    for(char *Scan = State->EXEFileName;
+    DWORD SizeOfFilename = GetModuleFileNameA(0, GameState->EXEFileName, sizeof(GameState->EXEFileName));
+    GameState->OnePastLastEXEFileNameSlash = GameState->EXEFileName;
+    for(char *Scan = GameState->EXEFileName;
         *Scan;
         ++Scan)
     {
         if(*Scan == '\\')
         {
-            State->OnePastLastEXEFileNameSlash = Scan + 1;
+            GameState->OnePastLastEXEFileNameSlash = Scan + 1;
         }
     }
 }
@@ -361,16 +297,16 @@ CatStrings(size_t SourceACount, char *SourceA,
 }
 
 internal void
-Win32BuildEXEPathFileName(win32_state *State, char *FileName,
+Win32BuildEXEPathFileName(win32_state *GameState, char *FileName,
                           int DestCount, char *Dest)
 {
-    CatStrings(State->OnePastLastEXEFileNameSlash - State->EXEFileName, State->EXEFileName,
+    CatStrings(GameState->OnePastLastEXEFileNameSlash - GameState->EXEFileName, GameState->EXEFileName,
                StringLength(FileName), FileName,
                DestCount, Dest);
 }
 
 internal void
-Win32ProcessPendingMessages(Win32GameCode *gamecode, GameState *state, PlatformAPI *platform)
+Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, PlatformAPI *platform)
 {
     MSG Message;
     while(PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
@@ -398,7 +334,7 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, GameState *state, PlatformA
                 {
                     if(gamecode->is_valid && gamecode->HandleKeyPress)
                     {
-                        gamecode->HandleKeyPress(state, VKCode);
+                        gamecode->HandleKeyPress(GameState, VKCode);
                     }
                     
                     if(VKCode == VK_ESCAPE)
@@ -426,15 +362,15 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, GameState *state, PlatformA
             
             case WM_MOUSEMOVE:
             {
-                state->mouse_x = LOWORD(Message.lParam);
-                state->mouse_y = HIWORD(Message.lParam);
+                GameState->mouse_x = LOWORD(Message.lParam);
+                GameState->mouse_y = HIWORD(Message.lParam);
                 
                 InvalidateRect(Message.hwnd, 0, FALSE);
             } break;
             
             case WM_LBUTTONDOWN:
             {
-                state->mouse_down = 1;
+                GameState->mouse_down = 1;
                 SetCapture(Message.hwnd);
                 
                 InvalidateRect(Message.hwnd, 0, FALSE);
@@ -442,14 +378,14 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, GameState *state, PlatformA
             
             case WM_LBUTTONUP:
             {
-                state->mouse_down = 0;
+                GameState->mouse_down = 0;
                 ReleaseCapture();
                 
                 // Handle button clicks
-                if (state->compose_button.is_pressed) {
+                if (GameState->compose_button.is_pressed) {
                     MessageBox(Message.hwnd, "Compose clicked!", "S3Mail", MB_OK);
                 }
-                if (state->delete_button.is_pressed) {
+                if (GameState->delete_button.is_pressed) {
                     MessageBox(Message.hwnd, "Delete clicked!", "S3Mail", MB_OK);
                 }
                 InvalidateRect(Message.hwnd, 0, FALSE);
@@ -529,9 +465,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                                                TempGameCodeDLLFullPath,
                                                GameCodeLockFullPath);
     
-    // Initialize GameState
-    GameState state = {};
-    //GameState state = Win32InitializeGameState();
+    // Initialize game_state
+    game_state GameState = {};
     
     // Register and create window
     WNDCLASS wc = {};
@@ -567,13 +502,13 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.PointInRect = Win32PointInRect;
     win32.ShowMessage = Win32ShowMessage;
     win32.InvalidateWindow = Win32InvalidateWindow;
-    win32.State = &state;
+    win32.GameState = &GameState;
     win32.Window = Window;
     
     
     if (gamecode.is_valid)
     {
-        gamecode.InitializeUI(&state);
+        gamecode.InitializeUI(&GameState);
     }
     
     
@@ -583,7 +518,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
         if (!Win32InitOpenGL(Window)) return -1;
         //Win32HandleResizey(state, state.window_width, state.window_height); 
         Win32HandleResizey(1200, 800);
-        if (!Win32InitFont(&state, "C:\\dev\\s3mail\\s3mail\\code\\fonts\\liberation-mono.ttf"))
+        if (!Win32InitFont(&GameState, "C:\\dev\\s3mail\\s3mail\\code\\fonts\\liberation-mono.ttf"))
         {
             MessageBox(Window, "Failed to load font", "Warning", MB_OK);
         }
@@ -610,7 +545,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                 // Add some debugging to see what's happening
                 if (gamecode.is_valid) {
                     if (gamecode.InitializeUI) {
-                        gamecode.InitializeUI(&state);
+                        gamecode.InitializeUI(&GameState);
                         // Maybe add a debug message here to confirm it ran
                         OutputDebugString("Successfully reinitialized UI after DLL reload\n");
                     } else {
@@ -619,7 +554,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                 } else {
                     OutputDebugString("ERROR: DLL reload failed - gamecode not valid\n");
                 }
-                //gamecode.InitializeUI(&state);
             }
             
             
@@ -627,19 +561,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
             if (gamecode.is_valid)
             {
                 glClear(GL_COLOR_BUFFER_BIT);
-                gamecode.UpdateAndRender(&state, &win32);
+                gamecode.UpdateAndRender(&GameState, &win32);
                 SwapBuffers(g_hdc);
             }
             
-            Win32ProcessPendingMessages(&gamecode, &state, &win32);
-            /*
-                        if (gamecode.is_valid)
-                        {
-                            glClear(GL_COLOR_BUFFER_BIT);
-                            gamecode.UpdateAndRender(&state, &win32);
-                            SwapBuffers(g_hdc);
-                        }
-                        */
+            Win32ProcessPendingMessages(&gamecode, &GameState, &win32);
         }
     }
     else
