@@ -168,6 +168,10 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 // Enter email mode
                 {
                     GameState->current_mode = MODE_EMAIL;
+                    if(GameState->email_list.item_count > 0)
+                    {
+                        GameState->email_list.selected_item = (GameState->email_list.item_count - 1);
+                    }
                     break;
                 }
             }
