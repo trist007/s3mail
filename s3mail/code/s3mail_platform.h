@@ -48,13 +48,22 @@ typedef struct {
     int item_count;
     int selected_item;
 } UIList;
-//
+
+typedef enum {
+    MODE_FOLDER = 0,
+    MODE_EMAIL,
+    MODE_CONTACT,
+    MODE_READING_EMAIL,
+    MODE_COUNT
+} app_mode;
+
 // Game state that persists across DLL reloads
 typedef struct {
     int window_width;
     int window_height;
     int mouse_x, mouse_y;
     int mouse_down;
+    app_mode current_mode;
     
     // UI elements
     UIButton compose_button;

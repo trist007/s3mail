@@ -77,9 +77,12 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->compose_button = {10, 635, 100, 30, "Compose", 0, 0};
         GameState->delete_button = {120, 635, 100, 30, "Delete", 0, 0};
         
-        GameState->folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 0};
+        GameState->folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 4};
         GameState->email_list = {220, 40, 900, 580, {"Email 3", "Email 2", "Email 1"}, 3, -1};
         GameState->contact_list = {10, 150, 200, 150, {"Papi", "Mom", "Glen", "Vito"}, 4, -1};
+        
+        // Initialize starting mode
+        GameState->current_mode = MODE_FOLDER;
     }
 }
 
@@ -132,33 +135,93 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
 
 __declspec(dllexport)
 GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
-    switch (key_code) {
-        case 'J':
-        // Move down in email list
-        if (GameState->email_list.selected_item < GameState->email_list.item_count - 1) {
-            GameState->email_list.selected_item++;
-        }
-        break;
+    switch(GameState->current_mode)
+    {
+        case MODE_FOLDER:
+        {
+            // Inbox is at the bottom so it's reversed
+            switch (key_code)
+            {
+                case 'J':
+                // Move down in folder list
+                if (GameState->folder_list.selected_item == 0)
+                {
+                    (GameState->folder_list.selected_item = GameState->folder_list.item_count - 1);
+                } 
+                else
+                {
+                    GameState->folder_list.selected_item--;
+                } break;
+                
+                case 'K':
+                // Move up in folder list
+                if (GameState->folder_list.selected_item == (GameState->folder_list.item_count - 1))
+                {
+                    GameState->folder_list.selected_item = 0;
+                }
+                else
+                {
+                    GameState->folder_list.selected_item++;
+                } break;
+                
+                case VK_SPACE:
+                // Enter email mode
+                {
+                    GameState->current_mode = MODE_EMAIL;
+                    break;
+                }
+            }
+        } break;
         
-        case 'K':
-        // Move up in email list
-        if (GameState->email_list.selected_item > 0) {
-            GameState->email_list.selected_item--;
-        }
-        break;
+        case MODE_EMAIL:
+        {
+            switch (key_code)
+            {
+                case 'J':
+                // Move down in email list
+                if (GameState->email_list.selected_item == 0)
+                {
+                    (GameState->email_list.selected_item = GameState->email_list.item_count - 1);
+                } 
+                else
+                {
+                    GameState->email_list.selected_item--;
+                } break;
+                
+                case 'K':
+                // Move up in email list
+                if (GameState->email_list.selected_item == (GameState->email_list.item_count - 1))
+                {
+                    GameState->email_list.selected_item = 0;
+                }
+                else
+                {
+                    GameState->email_list.selected_item++;
+                } break;
+                
+                case VK_RETURN:
+                {
+                    GameState->current_mode = MODE_READING_EMAIL;
+                    break;
+                }
+                
+                case 'I':
+                // Go back to folder mode
+                {
+                    GameState->current_mode = MODE_FOLDER;
+                    break;
+                }
+            }
+        } break;
         
-        case 'H':
-        // Move left in folder list
-        if (GameState->folder_list.selected_item > 0) {
-            GameState->folder_list.selected_item--;
-        }
-        break;
+        case MODE_CONTACT:
+        {
+            // Contact mode handling
+        } break;
         
-        case 'L':
-        // Move right in folder list
-        if (GameState->folder_list.selected_item < GameState->folder_list.item_count - 1) {
-            GameState->folder_list.selected_item++;
-        }
-        break;
+        case MODE_READING_EMAIL:
+        {
+            // Reading email mode handling
+        } break;
     }
 }

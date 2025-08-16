@@ -330,9 +330,10 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, Plat
                 // 0 or 1 values.
                 bool32 WasDown = ((Message.lParam & (1 << 30)) != 0);
                 bool32 IsDown = ((Message.lParam & (1 << 31)) == 0);
+                
                 if(WasDown != IsDown)
                 {
-                    if(gamecode->is_valid && gamecode->HandleKeyPress)
+                    if(gamecode->is_valid && IsDown && gamecode->HandleKeyPress)
                     {
                         gamecode->HandleKeyPress(GameState, VKCode);
                     }
