@@ -77,13 +77,55 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->window_height = 800;
         
         // Initialize UI elements
-        GameState->compose_button = {10, 635, 100, 30, "Compose", 0, 0};
-        GameState->delete_button = {120, 635, 100, 30, "Delete", 0, 0};
+        GameState->compose_button.x = 10;
+        GameState->compose_button.y = 635;
+        GameState->compose_button.width = 100;
+        GameState->compose_button.height = 30;
+        strcpy(GameState->compose_button.text, "Compose");
+        GameState->compose_button.is_hovered = 0;
+        GameState->compose_button.is_pressed = 0;
         
-        //GameState->folder_list = {10, 495, 200, 125, {"Trash", "Junk", "Drafts", "Sent", "Inbox"}, 5, 4};
-        GameState->folder_list = {10, 495, 200, 125, {"Inbox", "Sent", "Draft", "Junk", "Trash"}, 5, 0};
-        GameState->contact_list = {10, 380, 200, 100, {"Papi", "Mom", "Glen", "Vito"}, 4, -1};
-        GameState->email_list = {220, 40, 900, 580, {"Email 1", "Email 2", "Email 3"}, 3, -1};
+        GameState->delete_button.x = 120;
+        GameState->delete_button.y = 635;
+        GameState->delete_button.width = 100;
+        GameState->delete_button.height = 30;
+        strcpy(GameState->delete_button.text, "Delete");
+        GameState->delete_button.is_hovered = 0;
+        GameState->delete_button.is_pressed = 0;
+        
+        GameState->folder_list.x = 10;
+        GameState->folder_list.y = 495;
+        GameState->folder_list.width = 200;
+        GameState->folder_list.height = 125;
+        strcpy(GameState->folder_list.items[0], "Inbox");
+        strcpy(GameState->folder_list.items[1], "Sent");
+        strcpy(GameState->folder_list.items[2], "Draft");
+        strcpy(GameState->folder_list.items[3], "Junk");
+        strcpy(GameState->folder_list.items[4], "Trash");
+        GameState->folder_list.item_count = 5;
+        GameState->folder_list.selected_item = 0;
+        
+        GameState->contact_list.x = 10;
+        GameState->contact_list.y = 380;
+        GameState->contact_list.width = 200;
+        GameState->contact_list.height = 100;
+        strcpy(GameState->contact_list.items[0], "Papi");
+        strcpy(GameState->contact_list.items[1], "Mom");
+        strcpy(GameState->contact_list.items[2], "Glen");
+        strcpy(GameState->contact_list.items[3], "Vito");
+        GameState->contact_list.item_count = 4;
+        GameState->contact_list.selected_item = -1;
+        
+        GameState->email_list.x = 220;
+        GameState->email_list.y = 40;
+        GameState->email_list.width = 900;
+        GameState->email_list.height = 580;
+        strcpy(GameState->email_list.items[0], "Email 1");
+        strcpy(GameState->email_list.items[1], "Email 2");
+        strcpy(GameState->email_list.items[2], "Email 3");
+        GameState->email_list.item_count = 3;
+        GameState->email_list.selected_item = -1;
+        
         
         // Initialize starting mode
         GameState->current_mode = MODE_FOLDER;

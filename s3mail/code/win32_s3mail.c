@@ -122,12 +122,16 @@ Win32ExecuteAWSCLI(game_state *GameState, char *command)
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
         
-        GameState->awscli = {pi, stdout_read, true};
+        GameState->awscli.process_info = pi;
+        GameState->awscli.stdout_read = stdout_read;
+        GameState->awscli.process_running = true;
     }
     else
     {
         CloseHandle(stdout_read);
-        GameState->awscli = {0, 0, false};
+        GameState->awscli.process_info = (PROCESS_INFORMATION){0};
+        GameState->awscli.stdout_read = 0;
+        GameState->awscli.process_running = false;
     }
     
     CloseHandle(stdout_write);

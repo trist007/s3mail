@@ -28,6 +28,9 @@ typedef double real64;
 #define local_persist static
 #define global_variable static
 
+#define true 1
+#define false 0
+
 #if S3MAIL_SLOW
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
 #else
@@ -94,11 +97,11 @@ typedef struct {
 } game_state;
 
 #define WIN32_STATE_FILE_NAME_COUNT MAX_PATH
-struct win32_state
+typedef struct win32_state
 {
     char EXEFileName[WIN32_STATE_FILE_NAME_COUNT];
     char *OnePastLastEXEFileNameSlash;
-};
+} win32_state;
 
 // Platform services provided by EXE to DLL
 typedef struct {
