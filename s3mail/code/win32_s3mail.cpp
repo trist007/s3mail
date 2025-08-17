@@ -93,8 +93,72 @@ void Win32InvalidateWindow(HWND Window)
     InvalidateRect(Window, 0, FALSE);
 }
 
+internal void
+Win32ExecuteAWSCLI(game_state *GameState, char *command)
+{
+    //GameState->awscli = {};
+    
+    char full_command[1024];
+    sprintf(full_command, "cmd /c %s", command);
+    
+    SECURITY_ATTRIBUTES sa = {sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
+    HANDLE stdout_read, stdout_write;
+    CreatePipe(&stdout_read, &stdout_write, &sa, 0);
+    
+    STARTUPINFO si = {sizeof(STARTUPINFO)};
+    si.hStdOutput = stdout_write;
+    si.hStdError = stdout_write;
+    si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
+    
+    PROCESS_INFORMATION pi;
+    //bool32 result = CreateProcess(NULL, full_command, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi);
+    bool32 result = CreateProcess(0, full_command, 0, 0, TRUE, 0, 0, 0, &si, &pi);
+    
+    if(result)
+    {
+        // Wait for process to complete
+        WaitForSingleObject(pi.hProcess, 5000);
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        
+        GameState->awscli = {pi, stdout_read, true};
+    }
+    else
+    {
+        CloseHandle(stdout_read);
+        GameState->awscli = {0, 0, false};
+    }
+    
+    CloseHandle(stdout_write);
+}
+
+internal char*
+Win32ReadProcessOutput(HANDLE stdout_read)
+{
+    local_persist char buffer[4096];
+    DWORD bytes_available;
+    DWORD bytes_read;
+    
+    // Check if data is available without blocking
+    if(PeekNamedPipe(stdout_read, 0, 0, 0, &bytes_available, 0))
+    {
+        if(bytes_available > 0)
+        {
+            // Data is available, read it
+            if(ReadFile(stdout_read, buffer, sizeof(buffer) - 1, &bytes_read, 0))
+            {
+                buffer[bytes_read] = '\0';
+                return buffer;
+            }
+        }
+    }
+    
+    return NULL; // No data available yet
+}
+
 // DLL management
-FILETIME Win32GetLastWriteTime(const char *filename)
+FILETIME Win32GetLastWriteTime(char *filename)
 {
     WIN32_FILE_ATTRIBUTE_DATA data;
     FILETIME Result = {0};
@@ -335,7 +399,7 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, Plat
                 {
                     if(gamecode->is_valid && IsDown && gamecode->HandleKeyPress)
                     {
-                        gamecode->HandleKeyPress(GameState, VKCode);
+                        gamecode->HandleKeyPress(GameState, VKCode, platform);
                     }
                     
                     if(VKCode == VK_ESCAPE)
@@ -503,6 +567,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.PointInRect = Win32PointInRect;
     win32.ShowMessage = Win32ShowMessage;
     win32.InvalidateWindow = Win32InvalidateWindow;
+    win32.ExecuteAWSCLI = Win32ExecuteAWSCLI;
+    win32.ReadProcessOutput = Win32ReadProcessOutput;
     win32.GameState = &GameState;
     win32.Window = Window;
     

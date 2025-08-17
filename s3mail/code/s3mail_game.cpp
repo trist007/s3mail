@@ -116,7 +116,13 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     RenderList(&GameState->contact_list, platform);
     
     // Email preview
-    if (GameState->email_list.selected_item >= 0) {
+    if(GameState->show_aws_output)
+    {
+        // show aws output instead of preview
+        platform->DrawText(platform->GameState, GameState->aws_output_buffer, 640, 320);
+    }
+    else if (GameState->email_list.selected_item >= 0)
+    {
         char preview_text[256];
         sprintf(preview_text, "Preview of %s - Hot Reloaded!", GameState->email_list.items[GameState->email_list.selected_item]);
         platform->DrawText(platform->GameState, preview_text, 640, 320);
@@ -212,10 +218,32 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     // delete email
                 } break;
                 
+                case 'S':
+                {
+                    platform->ExecuteAWSCLI(GameState, "aws sts get-caller-identity");
+                    
+                    char* output_text = platform->ReadProcessOutput(GameState->awscli.stdout_read);
+                    if(output_text)
+                    {
+                        //platform->DrawText(platform->GameState, output_text, 640, 320);
+                        strncpy(GameState->aws_output_buffer, output_text, sizeof(GameState->aws_output_buffer) - 1);
+                        GameState->aws_output_buffer[sizeof(GameState->aws_output_buffer) - 1] = '\0';
+                        GameState->show_aws_output = true;
+                    }
+                    
+                } break;
+                
                 // open email message
                 case VK_RETURN:
                 {
                     GameState->current_mode = MODE_READING_EMAIL;
+                    break;
+                }
+                
+                // back to preview mode
+                case '/':
+                {
+                    GameState->show_aws_output = false;
                     break;
                 }
                 

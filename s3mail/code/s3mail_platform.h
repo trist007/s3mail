@@ -57,6 +57,13 @@ typedef enum {
     MODE_COUNT
 } app_mode;
 
+// Process struct for awscli
+typedef struct {
+    PROCESS_INFORMATION process_info;
+    HANDLE stdout_read;
+    bool32 process_running;
+} ProcessHandle;
+
 // Game state that persists across DLL reloads
 typedef struct {
     int window_width;
@@ -75,6 +82,11 @@ typedef struct {
     // OpenGL font data
     GLuint font_texture_id;
     stbtt_bakedchar cdata[96];
+    
+    // awscli
+    ProcessHandle awscli;
+    char aws_output_buffer[4096];
+    bool32 show_aws_output;
     
     // Memory
     void *permanent_storage;
@@ -104,6 +116,10 @@ typedef struct {
     void (*ShowMessage)(HWND Window, const char *message);
     void (*InvalidateWindow)(HWND Window);
     
+    // awscli
+    void (*ExecuteAWSCLI)(game_state *GameState, char* command);
+    char* (*ReadProcessOutput)(HANDLE stdout_read);
+    
     // Game state
     game_state *GameState;
     HWND Window;
@@ -120,7 +136,7 @@ typedef struct {
 #define GAME_UPDATE_AND_RENDER(name) void name(game_state *GameState, PlatformAPI* platform)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 
-#define GAME_HANDLE_KEY_PRESS(name) void name(game_state *GameState, int key_code)
+#define GAME_HANDLE_KEY_PRESS(name) void name(game_state *GameState, int key_code, PlatformAPI* platform)
 typedef GAME_HANDLE_KEY_PRESS(game_handle_key_press);
 
 #define GAME_INITIALIZE_UI(name) void name(game_state *GameState)
