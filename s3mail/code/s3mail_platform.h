@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include "stb_truetype.h"
 
+#define MAX_EMAILS 10
+
 // Types
 typedef int8_t int8;
 typedef int16_t int16;
@@ -36,6 +38,22 @@ typedef double real64;
 #else
 #define Assert(Expression)
 #endif
+
+#define Kilobytes(Value) ((Value)*1024LL)
+#define Megabytes(Value) (Kilobytes(Value)*1024LL)
+#define Gigabytes(Value) (Megabytes(Value)*1024LL)
+#define Terabytes(Value) (Gigabytes(Value)*1024LL)
+
+#define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+
+inline uint32
+SafeTruncateUInt64(uint64 Value)
+{
+    // TODO(casey): Defines for maximum values
+    Assert(Value <= 0xFFFFFFFF);
+    uint32 Result = (uint32)Value;
+    return(Result);
+}
 
 // UI structures
 typedef struct {
@@ -67,6 +85,15 @@ typedef struct {
     bool32 process_running;
 } ProcessHandle;
 
+// Email
+typedef struct {
+    char filename[MAX_PATH];
+    char subject[256];
+    char from[256];
+    FILETIME timestamp;
+    DWORD file_size;
+} EmailMetadata;
+
 // Game state that persists across DLL reloads
 typedef struct {
     int window_width;
@@ -91,6 +118,10 @@ typedef struct {
     char aws_output_buffer[4096];
     bool32 show_aws_output;
     
+    // email
+    EmailMetadata *email_array;
+    int32 email_count;
+    
     // Memory
     void *permanent_storage;
     uint64 permanent_storage_size;
@@ -102,6 +133,27 @@ typedef struct win32_state
     char EXEFileName[WIN32_STATE_FILE_NAME_COUNT];
     char *OnePastLastEXEFileNameSlash;
 } win32_state;
+
+// File IO
+typedef struct thread_context
+{
+    int Placeholder;
+} thread_context;
+
+typedef struct debug_read_file_result
+{
+    uint32 ContentsSize;
+    void *Contents;
+} debug_read_file_result;
+
+#define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(thread_context *Thread, void *Memory)
+typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
+
+#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) debug_read_file_result name(thread_context *Thread, char *Filename)
+typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
+
+#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(thread_context *Thread, char *Filename, uint32 MemorySize, void *Memory)
+typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 
 // Platform services provided by EXE to DLL
 typedef struct {
@@ -122,6 +174,12 @@ typedef struct {
     // awscli
     void (*ExecuteAWSCLI)(game_state *GameState, char* command);
     char* (*ReadProcessOutput)(HANDLE stdout_read);
+    
+    // file IO
+    debug_platform_free_file_memory *DEBUGPlatformFreeFileMemory;
+    debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
+    debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
+    EmailMetadata* (*ListFilesInDirectory)(char *directory);
     
     // Game state
     game_state *GameState;
@@ -160,6 +218,5 @@ typedef struct game_button_state
     int HalfTransitionCount;
     bool32 EndedDown;
 } game_button_state;
-
 
 #endif //S3MAIL_PLATFORM_H

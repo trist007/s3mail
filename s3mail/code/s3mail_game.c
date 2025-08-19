@@ -120,9 +120,9 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->email_list.y = 40;
         GameState->email_list.width = 900;
         GameState->email_list.height = 580;
-        strcpy(GameState->email_list.items[0], "Email 1");
-        strcpy(GameState->email_list.items[1], "Email 2");
-        strcpy(GameState->email_list.items[2], "Email 3");
+        strcpy(GameState->email_list.items[0], GameState->email_array[0].filename);
+        strcpy(GameState->email_list.items[1], GameState->email_array[1].filename);
+        strcpy(GameState->email_list.items[2], GameState->email_array[2].filename);
         GameState->email_list.item_count = 3;
         GameState->email_list.selected_item = -1;
         
@@ -260,9 +260,15 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     // delete email
                 } break;
                 
+                case 'L':
+                {
+                    // list files in directory
+                    platform->ListFilesInDirectory("C:/Users/Tristan/.email");
+                } break;
+                
                 case 'S':
                 {
-                    platform->ExecuteAWSCLI(GameState, "aws sts get-caller-identity");
+                    platform->ExecuteAWSCLI(GameState, "aws s3 sync s3://www.darkterminal.net/incoming/ C:/Users/Tristan/.email");
                     
                     char* output_text = platform->ReadProcessOutput(GameState->awscli.stdout_read);
                     if(output_text)

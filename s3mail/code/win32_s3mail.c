@@ -373,6 +373,142 @@ Win32BuildEXEPathFileName(win32_state *GameState, char *FileName,
                DestCount, Dest);
 }
 
+/*
+typedef struct {
+    char filename[MAX_PATH];
+    char subject[256];
+    char from[256];
+    FILETIME timestamp;
+    DWORD file_size;
+} EmailMetadata;
+*/
+
+internal EmailMetadata*
+Win32ListFilesInDirectory(char *directory)
+{
+    EmailMetadata *email_array = 0;
+    int32 email_count = 0;
+    int32 email_capacity = MAX_EMAILS;
+    
+    email_array = VirtualAlloc(0, Megabytes(10), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    
+    WIN32_FIND_DATA findData;
+    HANDLE hFind;
+    char searchPath[MAX_PATH];
+    
+    snprintf(searchPath, MAX_PATH, "%s\\*.*", directory);
+    
+    hFind = FindFirstFile(searchPath, &findData);
+    if(hFind == INVALID_HANDLE_VALUE)
+    {
+        // dir doesn't exist or no files found
+        return(0);
+    }
+    
+    do
+    {
+        // skip dirs and special entries
+        if(!(findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+        {
+            if(email_count < MAX_EMAILS)
+            {
+                strcpy(email_array[email_count++].filename, findData.cFileName);
+                //printf("File: %s\n", findData.cFileName);
+                //printf("Size: %lu bytes\n", findData.nFileSizeLow);
+                // findData.ftLastWriteTime contains the timestamp
+            }
+        }
+    } while(FindNextFile(hFind, &findData));
+    
+    FindClose(hFind);
+    
+    return(email_array);
+}
+
+DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory)
+{
+    if(Memory)
+    {
+        VirtualFree(Memory, 0, MEM_RELEASE);
+    }
+}
+
+DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile)
+{
+    debug_read_file_result Result = {};
+    
+    HANDLE FileHandle = CreateFileA(Filename, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+    if(FileHandle != INVALID_HANDLE_VALUE)
+    {
+        LARGE_INTEGER FileSize;
+        if(GetFileSizeEx(FileHandle, &FileSize))
+        {
+            uint32 FileSize32 = SafeTruncateUInt64(FileSize.QuadPart);
+            Result.Contents = VirtualAlloc(0, FileSize32, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+            if(Result.Contents)
+            {
+                DWORD BytesRead;
+                if(ReadFile(FileHandle, Result.Contents, FileSize32, &BytesRead, 0) &&
+                   (FileSize32 == BytesRead))
+                {
+                    // NOTE(casey): File read successfully
+                    Result.ContentsSize = FileSize32;
+                }
+                else
+                {                    
+                    // TODO(casey): Logging
+                    DEBUGPlatformFreeFileMemory(Thread, Result.Contents);
+                    Result.Contents = 0;
+                }
+            }
+            else
+            {
+                // TODO(casey): Logging
+            }
+        }
+        else
+        {
+            // TODO(casey): Logging
+        }
+        
+        CloseHandle(FileHandle);
+    }
+    else
+    {
+        // TODO(casey): Logging
+    }
+    
+    return(Result);
+}
+
+DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile)
+{
+    bool32 Result = false;
+    
+    HANDLE FileHandle = CreateFileA(Filename, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, 0, 0);
+    if(FileHandle != INVALID_HANDLE_VALUE)
+    {
+        DWORD BytesWritten;
+        if(WriteFile(FileHandle, Memory, MemorySize, &BytesWritten, 0))
+        {
+            // NOTE(casey): File read successfully
+            Result = (BytesWritten == MemorySize);
+        }
+        else
+        {
+            // TODO(casey): Logging
+        }
+        
+        CloseHandle(FileHandle);
+    }
+    else
+    {
+        // TODO(casey): Logging
+    }
+    
+    return(Result);
+}
+
 internal void
 Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, PlatformAPI *platform)
 {
@@ -573,9 +709,19 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.InvalidateWindow = Win32InvalidateWindow;
     win32.ExecuteAWSCLI = Win32ExecuteAWSCLI;
     win32.ReadProcessOutput = Win32ReadProcessOutput;
+    win32.ListFilesInDirectory = Win32ListFilesInDirectory;
+    win32.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
+    win32.DEBUGPlatformReadEntireFile = DEBUGPlatformReadEntireFile;
+    win32.DEBUGPlatformWriteEntireFile = DEBUGPlatformWriteEntireFile;
     win32.GameState = &GameState;
     win32.Window = Window;
     
+    // Build email tree
+    //EmailMetadata email_list[MAX_EMAILS];
+    EmailMetadata *email_array;
+    int email_count = 0;
+    GameState.email_array = Win32ListFilesInDirectory("C:/Users/Tristan/.email");
+    GameState.email_count = ArrayCount(email_array);
     
     if (gamecode.is_valid)
     {
