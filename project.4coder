@@ -32,8 +32,19 @@ command_list = {
 		.cmd = {
 			{ "C:\dev\s3mail\s3mail\code\run.bat", .os = "win" }
 		}
+	},
+	{
+		.name = "debug",
+		.out = "*debug*",
+		.footer_panel = true,
+		.save_dirty_files = true,
+		.cursor_at_end = false,
+		.cmd = {
+			{ "C:\dev\s3mail\s3mail\code\debug.bat", .os = "win" }
+		}
 	}
 };
 
 fkey_command[5] = "build";
 fkey_command[2] = "run";
+fkey_command[3] = "debug";
