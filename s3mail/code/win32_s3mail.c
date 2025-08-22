@@ -373,24 +373,11 @@ Win32BuildEXEPathFileName(win32_state *GameState, char *FileName,
                DestCount, Dest);
 }
 
-/*
-typedef struct {
-    char filename[MAX_PATH];
-    char subject[256];
-    char from[256];
-    FILETIME timestamp;
-    DWORD file_size;
-} EmailMetadata;
-*/
-
-internal EmailMetadata*
-Win32ListFilesInDirectory(char *directory)
+internal int
+Win32ListFilesInDirectory(char *directory, EmailMetadata **email_array)
 {
-    EmailMetadata *email_array = 0;
-    int32 email_count = 0;
-    int32 email_capacity = MAX_EMAILS;
-    
-    email_array = VirtualAlloc(0, Megabytes(10), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    *email_array = VirtualAlloc(0, Megabytes(10), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    int email_count = 0;
     
     WIN32_FIND_DATA findData;
     HANDLE hFind;
@@ -412,17 +399,14 @@ Win32ListFilesInDirectory(char *directory)
         {
             if(email_count < MAX_EMAILS)
             {
-                strcpy(email_array[email_count++].filename, findData.cFileName);
-                //printf("File: %s\n", findData.cFileName);
-                //printf("Size: %lu bytes\n", findData.nFileSizeLow);
-                // findData.ftLastWriteTime contains the timestamp
+                strcpy((*email_array)[email_count++].filename, findData.cFileName);
             }
         }
     } while(FindNextFile(hFind, &findData));
     
     FindClose(hFind);
     
-    return(email_array);
+    return(email_count);
 }
 
 DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory)
@@ -430,6 +414,97 @@ DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory)
     if(Memory)
     {
         VirtualFree(Memory, 0, MEM_RELEASE);
+    }
+}
+
+internal void
+Win32ExtractHeader(thread_context *Thread, EmailMetadata *email_array, int32 email_count,
+                   debug_platform_read_entire_file *ReadEntireFile, HeaderType header_type)
+{
+    
+    char *header_name;
+    int32 header_len;
+    
+    // Set up header string and length
+    switch(header_type)
+    {
+        case HEADER_FROM:
+        {
+            header_name = "From:";
+            header_len = 5;
+            break;
+        }
+        case HEADER_SUBJECT:
+        {
+            header_name = "Subject:";
+            header_len = 8;
+            break;
+        }
+        case HEADER_DATE:
+        {
+            header_name = "Date:";
+            header_len = 5;
+            break;
+        }
+        default: // add this to handle unexpected values
+        {
+            header_name = "Unknown";
+            header_len = 8;
+            
+            // don't know what to search for
+            return; 
+        }
+    }
+    
+    for(int count = 0;
+        count < email_count;
+        count++)
+    {
+        char *Match = "Unknown";
+        
+        debug_read_file_result ReadResult = ReadEntireFile(Thread, email_array[count].filename);    
+        if(ReadResult.ContentsSize != 0)
+        {
+            char *line = strtok(ReadResult.Contents, "\n");
+            while(line != NULL)
+            {
+                if(strncmp(line, header_name, header_len) == 0)
+                {
+                    Match = line + header_len;
+                    
+                    // Skip any leading whitespace
+                    while(*Match == ' ' || *Match == '\t')
+                    {
+                        Match++;
+                    }
+                    
+                    // break out of the while loop
+                    break;
+                }
+                
+                // move to the next line if current line wasn't a match
+                line = strtok(NULL, "\n");
+            }
+        }
+        
+        switch(header_type)
+        {
+            case HEADER_FROM:
+            {
+                snprintf(email_array[count].from, sizeof(email_array[count].from), "%s", Match);
+                break;
+            }
+            case HEADER_SUBJECT:
+            {
+                snprintf(email_array[count].subject, sizeof(email_array[count].subject), "%s", Match);
+                break;
+            }
+            case HEADER_DATE:
+            {
+                snprintf(email_array[count].date, sizeof(email_array[count].date), "%s", Match);
+                break;
+            }
+        }
     }
 }
 
@@ -716,12 +791,15 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.GameState = &GameState;
     win32.Window = Window;
     
-    // Build email tree
-    //EmailMetadata email_list[MAX_EMAILS];
-    EmailMetadata *email_array;
-    int email_count = 0;
-    GameState.email_array = Win32ListFilesInDirectory("C:/Users/Tristan/.email");
-    GameState.email_count = ArrayCount(email_array);
+    thread_context Thread = {};
+    
+    GameState.email_array = 0;
+    GameState.email_count = Win32ListFilesInDirectory("C:/Users/Tristan/.email", &GameState.email_array);
+    
+    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile, HEADER_FROM);
+    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile, HEADER_SUBJECT);
+    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile, HEADER_DATE);
+    
     
     if (gamecode.is_valid)
     {

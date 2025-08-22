@@ -7,6 +7,7 @@
 #include <GL/gl.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 #include "stb_truetype.h"
 
 #define MAX_EMAILS 10
@@ -44,6 +45,7 @@ typedef double real64;
 #define Gigabytes(Value) (Megabytes(Value)*1024LL)
 #define Terabytes(Value) (Gigabytes(Value)*1024LL)
 
+// this only works for static arrays
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
 
 inline uint32
@@ -78,6 +80,12 @@ typedef enum {
     MODE_COUNT
 } app_mode;
 
+typedef enum {
+    HEADER_FROM,
+    HEADER_SUBJECT,
+    HEADER_DATE
+} HeaderType;
+
 // Process struct for awscli
 typedef struct {
     PROCESS_INFORMATION process_info;
@@ -90,6 +98,7 @@ typedef struct {
     char filename[MAX_PATH];
     char subject[256];
     char from[256];
+    char date[256];
     FILETIME timestamp;
     DWORD file_size;
 } EmailMetadata;
@@ -179,7 +188,7 @@ typedef struct {
     debug_platform_free_file_memory *DEBUGPlatformFreeFileMemory;
     debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
     debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
-    EmailMetadata* (*ListFilesInDirectory)(char *directory);
+    int (*ListFilesInDirectory)(char *directory, EmailMetadata **email_array);
     
     // Game state
     game_state *GameState;

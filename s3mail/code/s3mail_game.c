@@ -120,9 +120,9 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->email_list.y = 40;
         GameState->email_list.width = 900;
         GameState->email_list.height = 580;
-        strcpy(GameState->email_list.items[0], GameState->email_array[0].filename);
-        strcpy(GameState->email_list.items[1], GameState->email_array[1].filename);
-        strcpy(GameState->email_list.items[2], GameState->email_array[2].filename);
+        strcpy(GameState->email_list.items[0], GameState->email_array[0].from);
+        strcpy(GameState->email_list.items[1], GameState->email_array[1].subject);
+        strcpy(GameState->email_list.items[2], GameState->email_array[2].date);
         GameState->email_list.item_count = 3;
         GameState->email_list.selected_item = -1;
         
@@ -263,7 +263,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 case 'L':
                 {
                     // list files in directory
-                    platform->ListFilesInDirectory("C:/Users/Tristan/.email");
+                    platform->ListFilesInDirectory("C:/Users/Tristan/.email", &GameState->email_array);
                 } break;
                 
                 case 'S':
