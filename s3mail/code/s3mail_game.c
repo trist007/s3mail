@@ -81,7 +81,7 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->compose_button.y = 635;
         GameState->compose_button.width = 100;
         GameState->compose_button.height = 30;
-        strcpy(GameState->compose_button.text, "Compose");
+        StringCchCopy(GameState->compose_button.text, ArrayCount(GameState->compose_button.text), "Compose");
         GameState->compose_button.is_hovered = 0;
         GameState->compose_button.is_pressed = 0;
         
@@ -89,7 +89,7 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->delete_button.y = 635;
         GameState->delete_button.width = 100;
         GameState->delete_button.height = 30;
-        strcpy(GameState->delete_button.text, "Delete");
+        StringCchCopy(GameState->delete_button.text, ArrayCount(GameState->delete_button.text), "Delete");
         GameState->delete_button.is_hovered = 0;
         GameState->delete_button.is_pressed = 0;
         
@@ -97,11 +97,11 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->folder_list.y = 495;
         GameState->folder_list.width = 200;
         GameState->folder_list.height = 125;
-        strcpy(GameState->folder_list.items[0], "Inbox");
-        strcpy(GameState->folder_list.items[1], "Sent");
-        strcpy(GameState->folder_list.items[2], "Draft");
-        strcpy(GameState->folder_list.items[3], "Junk");
-        strcpy(GameState->folder_list.items[4], "Trash");
+        StringCchCopy(GameState->folder_list.items[0], sizeof(GameState->folder_list.items[0]), "Inbox");
+        StringCchCopy(GameState->folder_list.items[1], sizeof(GameState->folder_list.items[1]), "Sent");
+        StringCchCopy(GameState->folder_list.items[2], sizeof(GameState->folder_list.items[2]), "Draft");
+        StringCchCopy(GameState->folder_list.items[3], sizeof(GameState->folder_list.items[3]), "Junk");
+        StringCchCopy(GameState->folder_list.items[4], sizeof(GameState->folder_list.items[4]), "Trash");
         GameState->folder_list.item_count = 5;
         GameState->folder_list.selected_item = 0;
         
@@ -109,10 +109,10 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->contact_list.y = 380;
         GameState->contact_list.width = 200;
         GameState->contact_list.height = 100;
-        strcpy(GameState->contact_list.items[0], "Papi");
-        strcpy(GameState->contact_list.items[1], "Mom");
-        strcpy(GameState->contact_list.items[2], "Glen");
-        strcpy(GameState->contact_list.items[3], "Vito");
+        StringCchCopy(GameState->contact_list.items[0], sizeof(GameState->contact_list.items[0]), "Papi");
+        StringCchCopy(GameState->contact_list.items[1], sizeof(GameState->contact_list.items[1]), "Mom");
+        StringCchCopy(GameState->contact_list.items[2], sizeof(GameState->contact_list.items[2]), "Glen");
+        StringCchCopy(GameState->contact_list.items[3], sizeof(GameState->contact_list.items[3]), "Vito");
         GameState->contact_list.item_count = 4;
         GameState->contact_list.selected_item = -1;
         
@@ -120,9 +120,9 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->email_list.y = 40;
         GameState->email_list.width = 900;
         GameState->email_list.height = 580;
-        strcpy(GameState->email_list.items[0], GameState->email_array[0].from);
-        strcpy(GameState->email_list.items[1], GameState->email_array[1].subject);
-        strcpy(GameState->email_list.items[2], GameState->email_array[2].date);
+        StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]), GameState->email_array[0].from);
+        StringCchCopy(GameState->email_list.items[1], sizeof(GameState->email_list.items[1]), GameState->email_array[1].subject);
+        StringCchCopy(GameState->email_list.items[2], sizeof(GameState->email_list.items[2]), GameState->email_array[2].date);
         GameState->email_list.item_count = 3;
         GameState->email_list.selected_item = -1;
         
@@ -166,7 +166,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     else if (GameState->email_list.selected_item >= 0)
     {
         char preview_text[256];
-        sprintf(preview_text, "Preview of %s - Hot Reloaded!", GameState->email_list.items[GameState->email_list.selected_item]);
+        sprintf_s(preview_text, sizeof(preview_text), "Preview of %s - Hot Reloaded!", GameState->email_list.items[GameState->email_list.selected_item]);
         platform->DrawText(platform->GameState, preview_text, 640, 320);
     }
     

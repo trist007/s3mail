@@ -373,6 +373,23 @@ Win32BuildEXEPathFileName(win32_state *GameState, char *FileName,
                DestCount, Dest);
 }
 
+internal DWORD
+Win32GetCurrentWorkingDirectory(char *dir)
+{
+    DWORD result = GetCurrentDirectory(MAX_PATH, dir);
+    
+    if(result > 0 && result < MAX_PATH)
+    {
+        
+    }
+    else
+    {
+        StringCchCopy(dir, sizeof(dir), "Error getting directory");
+    }
+    
+    return(result);
+}
+
 internal int
 Win32ListFilesInDirectory(char *directory, EmailMetadata **email_array)
 {
@@ -399,7 +416,7 @@ Win32ListFilesInDirectory(char *directory, EmailMetadata **email_array)
         {
             if(email_count < MAX_EMAILS)
             {
-                strcpy((*email_array)[email_count++].filename, findData.cFileName);
+                StringCchCopy((*email_array)[email_count++].filename, sizeof((*email_array)[email_count++].filename), findData.cFileName);
             }
         }
     } while(FindNextFile(hFind, &findData));
@@ -419,7 +436,7 @@ DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory)
 
 internal void
 Win32ExtractHeader(thread_context *Thread, EmailMetadata *email_array, int32 email_count,
-                   debug_platform_read_entire_file *ReadEntireFile, HeaderType header_type)
+                   debug_platform_read_entire_file *ReadEntireFile, char *path, HeaderType header_type)
 {
     
     char *header_name;
@@ -461,8 +478,11 @@ Win32ExtractHeader(thread_context *Thread, EmailMetadata *email_array, int32 ema
         count++)
     {
         char *Match = "Unknown";
+        char full_path_to_file[128];
         
-        debug_read_file_result ReadResult = ReadEntireFile(Thread, email_array[count].filename);    
+        StringCchPrintf(full_path_to_file, sizeof(full_path_to_file), "%s/%s", path, email_array[count].filename);
+        
+        debug_read_file_result ReadResult = ReadEntireFile(Thread, full_path_to_file);    
         if(ReadResult.ContentsSize != 0)
         {
             char *line = strtok(ReadResult.Contents, "\n");
@@ -762,8 +782,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                                  "S3MailWindow",
                                  "S3Mail",
                                  WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                                 1000,
-                                 200,
+                                 3500,
+                                 600,
                                  1200,
                                  800,
                                  0,
@@ -785,6 +805,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.ExecuteAWSCLI = Win32ExecuteAWSCLI;
     win32.ReadProcessOutput = Win32ReadProcessOutput;
     win32.ListFilesInDirectory = Win32ListFilesInDirectory;
+    win32.GetCurrentWorkingDirectory = Win32GetCurrentWorkingDirectory;
     win32.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
     win32.DEBUGPlatformReadEntireFile = DEBUGPlatformReadEntireFile;
     win32.DEBUGPlatformWriteEntireFile = DEBUGPlatformWriteEntireFile;
@@ -796,9 +817,12 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     GameState.email_array = 0;
     GameState.email_count = Win32ListFilesInDirectory("C:/Users/Tristan/.email", &GameState.email_array);
     
-    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile, HEADER_FROM);
-    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile, HEADER_SUBJECT);
-    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile, HEADER_DATE);
+    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
+                       "C:/Users/Tristan/.email", HEADER_FROM);
+    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
+                       "C:/Users/Tristan/.email", HEADER_SUBJECT);
+    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
+                       "C:/Users/Tristan/.email", HEADER_DATE);
     
     
     if (gamecode.is_valid)

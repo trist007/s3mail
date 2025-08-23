@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <strsafe.h>
 #include "stb_truetype.h"
 
 #define MAX_EMAILS 10
@@ -189,6 +190,7 @@ typedef struct {
     debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
     debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
     int (*ListFilesInDirectory)(char *directory, EmailMetadata **email_array);
+    DWORD (*GetCurrentWorkingDirectory)();
     
     // Game state
     game_state *GameState;
