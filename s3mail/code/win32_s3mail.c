@@ -837,7 +837,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
         if (!Win32InitOpenGL(Window)) return -1;
         //Win32HandleResizey(state, state.window_width, state.window_height); 
         Win32HandleResizey(1200, 800);
-        if (!Win32InitFont(&GameState, "C:\\dev\\s3mail\\s3mail\\code\\fonts\\liberation-mono.ttf"))
+        if (!Win32InitFont(&GameState, "C:/dev/s3mail/s3mail/code/fonts/liberation-mono.ttf"))
         {
             MessageBox(Window, "Failed to load font", "Warning", MB_OK);
         }
