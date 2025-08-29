@@ -511,7 +511,27 @@ Win32ExtractHeader(thread_context *Thread, EmailMetadata *email_array, int32 ema
         {
             case HEADER_FROM:
             {
-                snprintf(email_array[count].from, sizeof(email_array[count].from), "%s", Match);
+                // Check if this is in the "Name <email>" format
+                char *AngleBracketStart = strchr(Match, '<');
+                if(AngleBracketStart != NULL)
+                {
+                    // Copy everything before the '<'
+                    int name_len = AngleBracketStart - Match;
+                    
+                    // Remove trailing whitespace from the name
+                    while((name_len > 0) && ((Match[name_len - 1] == ' ') || (Match[name_len - 1] == '\t')))
+                    {
+                        name_len--;
+                    }
+                    
+                    snprintf(email_array[count].from, sizeof(email_array[count].from), "%.*s", name_len, Match);
+                }
+                else
+                {
+                    // No angle brackets found, use the whole string
+                    snprintf(email_array[count].from, sizeof(email_array[count].from), "%s", Match);
+                }
+                
                 break;
             }
             case HEADER_SUBJECT:
@@ -784,8 +804,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                                  WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                                  3500,
                                  600,
-                                 1200,
-                                 800,
+                                 2250,
+                                 1500,
                                  0,
                                  0,
                                  hInstance,
@@ -836,7 +856,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
         
         if (!Win32InitOpenGL(Window)) return -1;
         //Win32HandleResizey(state, state.window_width, state.window_height); 
-        Win32HandleResizey(1200, 800);
+        Win32HandleResizey(2250, 1500);
         if (!Win32InitFont(&GameState, "C:/dev/s3mail/s3mail/code/fonts/liberation-mono.ttf"))
         {
             MessageBox(Window, "Failed to load font", "Warning", MB_OK);

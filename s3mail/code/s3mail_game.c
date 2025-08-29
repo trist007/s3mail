@@ -73,12 +73,12 @@ GAME_INITIALIZE_UI(GameInitializeUI)
     if (GameState)
     {
         // NOTE(trist007): try using CW_USEDEFAULT
-        GameState->window_width = 1200;
-        GameState->window_height = 800;
+        GameState->window_width = 2250;
+        GameState->window_height = 1500;
         
         // Initialize UI elements
         GameState->compose_button.x = 10;
-        GameState->compose_button.y = 635;
+        GameState->compose_button.y = 1035;
         GameState->compose_button.width = 100;
         GameState->compose_button.height = 30;
         StringCchCopy(GameState->compose_button.text, ArrayCount(GameState->compose_button.text), "Compose");
@@ -86,7 +86,7 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->compose_button.is_pressed = 0;
         
         GameState->delete_button.x = 120;
-        GameState->delete_button.y = 635;
+        GameState->delete_button.y = 1035;
         GameState->delete_button.width = 100;
         GameState->delete_button.height = 30;
         StringCchCopy(GameState->delete_button.text, ArrayCount(GameState->delete_button.text), "Delete");
@@ -94,7 +94,7 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->delete_button.is_pressed = 0;
         
         GameState->folder_list.x = 10;
-        GameState->folder_list.y = 495;
+        GameState->folder_list.y = 895;
         GameState->folder_list.width = 200;
         GameState->folder_list.height = 125;
         StringCchCopy(GameState->folder_list.items[0], sizeof(GameState->folder_list.items[0]), "Inbox");
@@ -106,7 +106,7 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->folder_list.selected_item = 0;
         
         GameState->contact_list.x = 10;
-        GameState->contact_list.y = 380;
+        GameState->contact_list.y = 780;
         GameState->contact_list.width = 200;
         GameState->contact_list.height = 100;
         StringCchCopy(GameState->contact_list.items[0], sizeof(GameState->contact_list.items[0]), "Papi");
@@ -118,12 +118,29 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         
         GameState->email_list.x = 220;
         GameState->email_list.y = 40;
-        GameState->email_list.width = 900;
-        GameState->email_list.height = 580;
-        StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]), GameState->email_array[0].from);
-        StringCchCopy(GameState->email_list.items[1], sizeof(GameState->email_list.items[1]), GameState->email_array[1].subject);
-        StringCchCopy(GameState->email_list.items[2], sizeof(GameState->email_list.items[2]), GameState->email_array[2].date);
-        GameState->email_list.item_count = 3;
+        GameState->email_list.width = 2000;
+        GameState->email_list.height = 980;
+        /*
+        StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_array[0].from), GameState->email_array[0].from);
+        StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_array[0].subject), GameState->email_array[0].subject);
+        StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_array[0].date), GameState->email_array[0].date);
+*/
+        
+        // NOTE(trist007): testing Email headers display
+        StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
+                     GameState->email_array[0].from);
+        
+        StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]), " | ");
+        
+        StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
+                     GameState->email_array[0].subject);
+        
+        StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]), " | ");
+        
+        StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
+                     GameState->email_array[0].date);
+        
+        GameState->email_list.item_count = 1;
         GameState->email_list.selected_item = -1;
         
         
@@ -138,10 +155,10 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     
     // Draw purple header stripe - try changing this color and recompiling!
     platform->SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
-    platform->DrawRect(0, 675, 1200, 450);
+    platform->DrawRect(0,1075, 2250, 350);
     
     platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawRectOutline(0, 675, 1200, 450);
+    platform->DrawRectOutline(0, 1075, 2250, 650);
     
     // Update UI elements
     UpdateButton(&GameState->compose_button, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
