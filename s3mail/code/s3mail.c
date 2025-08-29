@@ -109,5 +109,11 @@ ChangeDateHeaderIfToday(char *date_header)
 {
     // Date header: Wed, 27 Aug 2025 08:14:03
     char *SemiColon = strchr(date_header, ':');
-    date_header = SemiColon - 2;
+    if(SemiColon)
+    {
+        char *time_start = SemiColon - 2;
+        
+        // copy the time to email_array[count].date
+        memmove(date_header, time_start, strlen(time_start) + 1);
+    }
 }
