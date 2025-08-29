@@ -10,6 +10,7 @@
 #include <string.h>
 #include <strsafe.h>
 #include "stb_truetype.h"
+#include "s3mail.h"
 
 #define MAX_EMAILS 100
 

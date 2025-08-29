@@ -561,6 +561,7 @@ Win32ExtractHeader(thread_context *Thread, EmailMetadata *email_array, int32 ema
                     snprintf(email_array[count].subject, sizeof(email_array[count].subject), "%s", Match);
                 }
                 
+                DecodeSubjectIfNeeded(email_array[count].subject);
                 break;
             }
             case HEADER_DATE:
