@@ -845,7 +845,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     wc.lpfnWndProc = Win32MainWindowCallback;
     wc.hInstance = hInstance;
     wc.lpszClassName = "S3MailWindow";
-    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    //wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1); // white background
+    wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH); // black background
     wc.hCursor = LoadCursor(0, IDC_ARROW);
     
     if (!RegisterClass(&wc)) return 1;
