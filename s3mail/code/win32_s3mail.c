@@ -435,7 +435,7 @@ DEBUG_PLATFORM_FREE_FILE_MEMORY(DEBUGPlatformFreeFileMemory)
 }
 
 internal void
-Win32ExtractHeader(thread_context *Thread, EmailMetadata *email_array, int32 email_count,
+Win32ExtractHeader(thread_context *Thread, char *date, EmailMetadata *email_array, int32 email_count,
                    debug_platform_read_entire_file *ReadEntireFile, char *path, HeaderType header_type)
 {
     
@@ -566,6 +566,11 @@ Win32ExtractHeader(thread_context *Thread, EmailMetadata *email_array, int32 ema
             }
             case HEADER_DATE:
             {
+                if(CheckIfEmailReceivedToday(date, Match))
+                {
+                    // Change to just show time implying it was received today
+                    ChangeDateHeaderIfToday(Match);
+                }
                 snprintf(email_array[count].date, sizeof(email_array[count].date), "%s", Match);
                 break;
             }
@@ -884,11 +889,16 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     GameState.email_array = 0;
     GameState.email_count = Win32ListFilesInDirectory("C:/Users/Tristan/.email", &GameState.email_array);
     
-    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
+    // get time now
+    char date[32];
+    GetDate(date, sizeof(date));
+    
+    
+    Win32ExtractHeader(&Thread, date, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
                        "C:/Users/Tristan/.email", HEADER_FROM);
-    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
+    Win32ExtractHeader(&Thread, date, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
                        "C:/Users/Tristan/.email", HEADER_SUBJECT);
-    Win32ExtractHeader(&Thread, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
+    Win32ExtractHeader(&Thread, date, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
                        "C:/Users/Tristan/.email", HEADER_DATE);
     
     

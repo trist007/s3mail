@@ -122,15 +122,17 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->compose_button.y = 1235;
         GameState->compose_button.width = 100;
         GameState->compose_button.height = 30;
-        StringCchCopy(GameState->compose_button.text, ArrayCount(GameState->compose_button.text), "Compose");
+        StringCchCopy(GameState->compose_button.text,
+                      ArrayCount(GameState->compose_button.text), "Compose");
         GameState->compose_button.is_hovered = 0;
         GameState->compose_button.is_pressed = 0;
         
         GameState->delete_button.x = 120;
         GameState->delete_button.y = 1235;
-        GameState->delete_button.width = 100;
+        GameState->delete_button.width = 90;
         GameState->delete_button.height = 30;
-        StringCchCopy(GameState->delete_button.text, ArrayCount(GameState->delete_button.text), "Delete");
+        StringCchCopy(GameState->delete_button.text,
+                      ArrayCount(GameState->delete_button.text), "Delete");
         GameState->delete_button.is_hovered = 0;
         GameState->delete_button.is_pressed = 0;
         

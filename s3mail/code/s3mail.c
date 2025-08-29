@@ -1,6 +1,7 @@
 #include "s3mail.h"
 
-void DecodeQPString(char *input, char* output, size_t output_size)
+void
+DecodeQPString(char *input, char* output, size_t output_size)
 {
     char *src = input;
     char *dst = output;
@@ -59,4 +60,54 @@ void DecodeSubjectIfNeeded(char *subject)
             StringCchCopy(subject, 256, result);
         }
     }
+}
+
+void
+GetDate(char *date, size_t buffer_size)
+{
+    
+    time_t now = time(NULL);
+    struct tm* local_time = localtime(&now);
+    
+    strftime(date, buffer_size, "%a, %d, %Y", local_time);
+}
+
+int
+CheckIfEmailReceivedToday(char *date, char *date_header)
+{
+    // Date header: Wed, 27 Aug 2025 08:14:03
+    // date = Fri, 29, 2025
+    int Result = 0;
+    
+    int day1 = 0;
+    int day2 = 0;
+    int year1 = 0;
+    int year2 = 0;
+    
+    // days match?
+    if(strncmp(date, date_header, 3) == 0)
+    {
+        day1 = atoi(date+5);
+        day2 = atoi(date_header+5);
+        if(day1 == day2)
+        {
+            year1 = atoi(strrchr(date, ' ') + 1);
+            year2 = atoi(date_header + 12);
+            if(year1 == year2)
+            {
+                Result = 1;
+                return(Result);
+            }
+        }
+    }
+    
+    return(Result);
+}
+
+void
+ChangeDateHeaderIfToday(char *date_header)
+{
+    // Date header: Wed, 27 Aug 2025 08:14:03
+    char *SemiColon = strchr(date_header, ':');
+    date_header = SemiColon - 2;
 }
