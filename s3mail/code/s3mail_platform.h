@@ -97,6 +97,7 @@ typedef struct {
 // Email
 typedef struct {
     char filename[MAX_PATH];
+    char email[256];
     char subject[256];
     char from[256];
     char date[256];
@@ -211,7 +212,7 @@ typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 #define GAME_HANDLE_KEY_PRESS(name) void name(game_state *GameState, int key_code, PlatformAPI* platform)
 typedef GAME_HANDLE_KEY_PRESS(game_handle_key_press);
 
-#define GAME_INITIALIZE_UI(name) void name(game_state *GameState)
+#define GAME_INITIALIZE_UI(name) void name(game_state *GameState, PlatformAPI* platform)
 typedef GAME_INITIALIZE_UI(game_initialize_ui);
 
 // DLL hot reloading

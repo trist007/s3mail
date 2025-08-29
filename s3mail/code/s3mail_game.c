@@ -1,6 +1,9 @@
 #include "s3mail_platform.h"
 #include <GL/gl.h>
 
+// Email Layout format string
+#define EMAIL_FORMAT "%-30s | %-50s | %-15s"
+
 internal bool32 reinit_ui = true;
 
 // UI update functions
@@ -67,6 +70,44 @@ void RenderList(UIList* list, PlatformAPI* platform) {
     }
 }
 
+void RenderListWithHeader(UIList* list, PlatformAPI* platform) {
+    // Background
+    platform->SetColor(0.9f, 0.9f, 0.9f);
+    platform->DrawRect(list->x, list->y, list->width, list->height);
+    
+    // Border
+    platform->SetColor(0.0f, 0.0f, 0.0f);
+    platform->DrawRectOutline(list->x, list->y, list->width, list->height);
+    
+    // Items
+    int item_height = 25;
+    
+    char header_text[256];
+    StringCchPrintf(header_text, sizeof(header_text),
+                    EMAIL_FORMAT, "From", "Subject", "Received");
+    
+    float header_y = (list->y + list->height) - item_height;  // Top row
+    platform->SetColor(0.7f, 0.7f, 0.7f);  // Different color for header
+    platform->DrawRect(list->x, header_y, list->width, item_height);
+    platform->SetColor(0.0f, 0.0f, 0.0f);
+    platform->DrawText(platform->GameState, header_text, list->x + 5, header_y + 5);
+    
+    for (int i = 0; i < list->item_count; i++) {
+        
+        // Calculate y from the top instead of the bottom 
+        //float item_y = list->y + i * item_height;
+        float item_y = (list->y + list->height) - ((i + 2) * item_height);
+        
+        if (i == list->selected_item) {
+            platform->SetColor(0.5f, 0.7f, 1.0f);  // You can easily tweak these colors now!
+            platform->DrawRect(list->x, item_y, list->width, item_height);
+        }
+        
+        platform->SetColor(0.0f, 0.0f, 0.0f);
+        platform->DrawText(platform->GameState, list->items[i], list->x + 5, item_y + 5);
+    }
+}
+
 __declspec(dllexport)
 GAME_INITIALIZE_UI(GameInitializeUI)
 {
@@ -77,8 +118,9 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->window_height = 1500;
         
         // Initialize UI elements
-        GameState->compose_button.x = 10;
-        GameState->compose_button.y = 1035;
+        /*
+GameState->compose_button.x = 10;
+        GameState->compose_button.y = 1235;
         GameState->compose_button.width = 100;
         GameState->compose_button.height = 30;
         StringCchCopy(GameState->compose_button.text, ArrayCount(GameState->compose_button.text), "Compose");
@@ -86,15 +128,16 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->compose_button.is_pressed = 0;
         
         GameState->delete_button.x = 120;
-        GameState->delete_button.y = 1035;
+        GameState->delete_button.y = 1235;
         GameState->delete_button.width = 100;
         GameState->delete_button.height = 30;
         StringCchCopy(GameState->delete_button.text, ArrayCount(GameState->delete_button.text), "Delete");
         GameState->delete_button.is_hovered = 0;
         GameState->delete_button.is_pressed = 0;
+*/
         
         GameState->folder_list.x = 10;
-        GameState->folder_list.y = 895;
+        GameState->folder_list.y = 1095;
         GameState->folder_list.width = 200;
         GameState->folder_list.height = 125;
         StringCchCopy(GameState->folder_list.items[0], sizeof(GameState->folder_list.items[0]), "Inbox");
@@ -106,7 +149,7 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->folder_list.selected_item = 0;
         
         GameState->contact_list.x = 10;
-        GameState->contact_list.y = 780;
+        GameState->contact_list.y = 980;
         GameState->contact_list.width = 200;
         GameState->contact_list.height = 100;
         StringCchCopy(GameState->contact_list.items[0], sizeof(GameState->contact_list.items[0]), "Papi");
@@ -117,9 +160,10 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->contact_list.selected_item = -1;
         
         GameState->email_list.x = 220;
-        GameState->email_list.y = 40;
+        GameState->email_list.y = 240;
         GameState->email_list.width = 2000;
         GameState->email_list.height = 980;
+        
         /*
         StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_array[0].from), GameState->email_array[0].from);
         StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_array[0].subject), GameState->email_array[0].subject);
@@ -127,20 +171,21 @@ GAME_INITIALIZE_UI(GameInitializeUI)
 */
         
         // NOTE(trist007): testing Email headers display
-        StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
-                     GameState->email_array[0].from);
+        StringCchPrintf(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
+                        EMAIL_FORMAT,
+                        GameState->email_array[0].from,
+                        GameState->email_array[0].subject,
+                        GameState->email_array[0].date);
         
-        StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]), " | ");
+        /*
+        StringCchPrintf(GameState->email_list.items[1], sizeof(GameState->email_list.items[1]),
+                        GameState->email_array[0].subject);
         
-        StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
-                     GameState->email_array[0].subject);
+        StringCchPrintf(GameState->email_list.items[1], sizeof(GameState->email_list.items[1]),
+                        GameState->email_array[0].date);
+*/
         
-        StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]), " | ");
-        
-        StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
-                     GameState->email_array[0].date);
-        
-        GameState->email_list.item_count = 1;
+        GameState->email_list.item_count = 2;
         GameState->email_list.selected_item = -1;
         
         
@@ -155,10 +200,10 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     
     // Draw purple header stripe - try changing this color and recompiling!
     platform->SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
-    platform->DrawRect(0,1075, 2250, 350);
+    platform->DrawRect(0,1275, 2250, 200);
     
     platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawRectOutline(0, 1075, 2250, 650);
+    platform->DrawRectOutline(0, 1275, 2250, 200);
     
     // Update UI elements
     UpdateButton(&GameState->compose_button, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
@@ -171,8 +216,16 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     RenderButton(&GameState->compose_button, platform);
     RenderButton(&GameState->delete_button, platform);
     RenderList(&GameState->folder_list, platform);
-    RenderList(&GameState->email_list, platform);
+    RenderListWithHeader(&GameState->email_list, platform);
     RenderList(&GameState->contact_list, platform);
+    
+    // Print Legend From | Subject | Received
+    /*
+    char header_text[256];
+    StringCchPrintf(header_text, sizeof(header_text),
+                    EMAIL_FORMAT, "From", "Subject", "Received");
+    platform->DrawText(platform->GameState, header_text, 225, 1225);
+*/
     
     // Email preview
     if(GameState->show_aws_output)

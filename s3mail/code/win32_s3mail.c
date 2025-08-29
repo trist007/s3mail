@@ -519,7 +519,7 @@ Win32ExtractHeader(thread_context *Thread, EmailMetadata *email_array, int32 ema
                     int name_len = AngleBracketStart - Match;
                     
                     // Remove trailing whitespace from the name
-                    while((name_len > 0) && ((Match[name_len - 1] == ' ') || (Match[name_len - 1] == '\t')))
+                    while((name_len > 0) && ((Match[name_len - 1] == ' ') || (Match[name_len - 1] == '\t') || (Match[name_len - 1] == '\r')))
                     {
                         name_len--;
                     }
@@ -536,7 +536,31 @@ Win32ExtractHeader(thread_context *Thread, EmailMetadata *email_array, int32 ema
             }
             case HEADER_SUBJECT:
             {
-                snprintf(email_array[count].subject, sizeof(email_array[count].subject), "%s", Match);
+                char *CarriageReturn = strchr(Match, '\r');
+                int len = 0;
+                size_t name_len = strlen(Match);
+                if(CarriageReturn != NULL)
+                {
+                    name_len = CarriageReturn - Match;
+                    
+                    // Remove trailing whitespace from the name
+                    while((name_len > 0) && ((Match[name_len - 1] == ' ') || (Match[name_len - 1] == '\t') || (Match[name_len - 1] == '\r')))
+                    {
+                        name_len--;
+                    }
+                    
+                    if(name_len <= INT_MAX)
+                    {
+                        len = (int)name_len;
+                    }
+                    
+                    snprintf(email_array[count].subject, sizeof(email_array[count].subject), "%.*s", len, Match);
+                }
+                else
+                {
+                    snprintf(email_array[count].subject, sizeof(email_array[count].subject), "%s", Match);
+                }
+                
                 break;
             }
             case HEADER_DATE:
@@ -546,6 +570,28 @@ Win32ExtractHeader(thread_context *Thread, EmailMetadata *email_array, int32 ema
             }
         }
     }
+}
+
+internal void
+Win32CopyEmailMetaDatatoEmailList(thread_context *Thread, int32 email_count, game_state *GameState)
+{
+    /*
+    StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
+                 GameState->email_array[0].from);
+    
+    StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]), " \t ");
+    
+    StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
+                 GameState->email_array[0].subject);
+    
+    StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]), " \t ");
+    
+    StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
+                 GameState->email_array[0].date);
+    
+    GameState->email_list.item_count = 1;
+    GameState->email_list.selected_item = -1;
+*/
 }
 
 DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile)
@@ -802,8 +848,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                                  "S3MailWindow",
                                  "S3Mail",
                                  WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                                 3500,
-                                 600,
+                                 3000,
+                                 0,
                                  2250,
                                  1500,
                                  0,
@@ -847,7 +893,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     
     if (gamecode.is_valid)
     {
-        gamecode.InitializeUI(&GameState);
+        gamecode.InitializeUI(&GameState, &win32);
     }
     
     
@@ -884,7 +930,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                 // Add some debugging to see what's happening
                 if (gamecode.is_valid) {
                     if (gamecode.InitializeUI) {
-                        gamecode.InitializeUI(&GameState);
+                        gamecode.InitializeUI(&GameState, &win32);
                         // Maybe add a debug message here to confirm it ran
                         OutputDebugString("Successfully reinitialized UI after DLL reload\n");
                     } else {
