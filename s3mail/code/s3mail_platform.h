@@ -11,7 +11,7 @@
 #include <strsafe.h>
 #include "stb_truetype.h"
 
-#define MAX_EMAILS 10
+#define MAX_EMAILS 100
 
 // Types
 typedef int8_t int8;
@@ -34,6 +34,10 @@ typedef double real64;
 
 #define true 1
 #define false 0
+
+// resolution
+#define WINDOW_WIDTH_HD 2160
+#define WINDOW_HEIGHT_HD 1440
 
 #if S3MAIL_SLOW
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}
@@ -68,7 +72,7 @@ typedef struct {
 
 typedef struct {
     float x, y, width, height;
-    char items[10][256];
+    char items[MAX_EMAILS][256];
     int item_count;
     int selected_item;
 } UIList;

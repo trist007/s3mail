@@ -393,7 +393,7 @@ Win32GetCurrentWorkingDirectory(char *dir)
 internal int
 Win32ListFilesInDirectory(char *directory, EmailMetadata **email_array)
 {
-    *email_array = VirtualAlloc(0, Megabytes(10), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+    *email_array = VirtualAlloc(0, Megabytes(100), MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
     int email_count = 0;
     
     WIN32_FIND_DATA findData;
@@ -850,8 +850,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                                  WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                                  3000,
                                  0,
-                                 2250,
-                                 1500,
+                                 WINDOW_WIDTH_HD,
+                                 WINDOW_HEIGHT_HD,
                                  0,
                                  0,
                                  hInstance,
@@ -902,7 +902,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
         
         if (!Win32InitOpenGL(Window)) return -1;
         //Win32HandleResizey(state, state.window_width, state.window_height); 
-        Win32HandleResizey(2250, 1500);
+        Win32HandleResizey(WINDOW_WIDTH_HD, WINDOW_HEIGHT_HD);
         if (!Win32InitFont(&GameState, "C:/dev/s3mail/s3mail/code/fonts/liberation-mono.ttf"))
         {
             MessageBox(Window, "Failed to load font", "Warning", MB_OK);

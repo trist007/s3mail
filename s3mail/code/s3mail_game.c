@@ -2,7 +2,7 @@
 #include <GL/gl.h>
 
 // Email Layout format string
-#define EMAIL_FORMAT "%-30s | %-50s | %-15s"
+#define EMAIL_FORMAT "%-30.30s | %-75.75s | %-25.25s"
 
 internal bool32 reinit_ui = true;
 
@@ -114,12 +114,11 @@ GAME_INITIALIZE_UI(GameInitializeUI)
     if (GameState)
     {
         // NOTE(trist007): try using CW_USEDEFAULT
-        GameState->window_width = 2250;
-        GameState->window_height = 1500;
+        GameState->window_width = WINDOW_WIDTH_HD;
+        GameState->window_height = WINDOW_HEIGHT_HD;
         
         // Initialize UI elements
-        /*
-GameState->compose_button.x = 10;
+        GameState->compose_button.x = 10;
         GameState->compose_button.y = 1235;
         GameState->compose_button.width = 100;
         GameState->compose_button.height = 30;
@@ -134,7 +133,6 @@ GameState->compose_button.x = 10;
         StringCchCopy(GameState->delete_button.text, ArrayCount(GameState->delete_button.text), "Delete");
         GameState->delete_button.is_hovered = 0;
         GameState->delete_button.is_pressed = 0;
-*/
         
         GameState->folder_list.x = 10;
         GameState->folder_list.y = 1095;
@@ -160,9 +158,9 @@ GameState->compose_button.x = 10;
         GameState->contact_list.selected_item = -1;
         
         GameState->email_list.x = 220;
-        GameState->email_list.y = 240;
+        GameState->email_list.y = 40;
         GameState->email_list.width = 2000;
-        GameState->email_list.height = 980;
+        GameState->email_list.height = 1180;
         
         /*
         StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_array[0].from), GameState->email_array[0].from);
@@ -171,11 +169,16 @@ GameState->compose_button.x = 10;
 */
         
         // NOTE(trist007): testing Email headers display
-        StringCchPrintf(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
-                        EMAIL_FORMAT,
-                        GameState->email_array[0].from,
-                        GameState->email_array[0].subject,
-                        GameState->email_array[0].date);
+        for(int i = 0;
+            i < GameState->email_count;
+            i++)
+        {
+            StringCchPrintf(GameState->email_list.items[i], sizeof(GameState->email_list.items[i]),
+                            EMAIL_FORMAT,
+                            GameState->email_array[i].from,
+                            GameState->email_array[i].subject,
+                            GameState->email_array[i].date);
+        }
         
         /*
         StringCchPrintf(GameState->email_list.items[1], sizeof(GameState->email_list.items[1]),
@@ -185,7 +188,7 @@ GameState->compose_button.x = 10;
                         GameState->email_array[0].date);
 */
         
-        GameState->email_list.item_count = 2;
+        GameState->email_list.item_count = GameState->email_count;
         GameState->email_list.selected_item = -1;
         
         
