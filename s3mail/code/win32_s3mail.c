@@ -566,41 +566,12 @@ Win32ExtractHeader(thread_context *Thread, char *date, EmailMetadata *email_arra
             }
             case HEADER_DATE:
             {
-                /*
-if(CheckIfEmailReceivedToday(date, Match))
-                {
-                    // Change to just show time implying it was received today
-                    ChangeDateHeaderIfToday(Match);
-                }
-*/
                 snprintf(email_array[count].date, sizeof(email_array[count].date), "%s", Match);
                 email_array[count].parsed_time = ParseEmailDate(Match);
                 break;
             }
         }
     }
-}
-
-internal void
-Win32CopyEmailMetaDatatoEmailList(thread_context *Thread, int32 email_count, game_state *GameState)
-{
-    /*
-    StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
-                 GameState->email_array[0].from);
-    
-    StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]), " \t ");
-    
-    StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
-                 GameState->email_array[0].subject);
-    
-    StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]), " \t ");
-    
-    StringCchCat(GameState->email_list.items[0], sizeof(GameState->email_list.items[0]),
-                 GameState->email_array[0].date);
-    
-    GameState->email_list.item_count = 1;
-    GameState->email_list.selected_item = -1;
-*/
 }
 
 DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile)
@@ -907,6 +878,18 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     
     // sort emails by Date Header
     qsort(GameState.email_array, GameState.email_count, sizeof(EmailMetadata), CompareByTimestamp);
+    
+    // if email was received today just show time instead of whole date
+    for(int i = 0;
+        i < GameState.email_count;
+        i++)
+    {
+        if(CheckIfEmailReceivedToday(date, GameState.email_array[i].date))
+        {
+            // Change to just show time implying it was received today
+            ChangeDateHeaderIfToday(GameState.email_array[i].date);
+        }
+    }
     
     if (gamecode.is_valid)
     {
