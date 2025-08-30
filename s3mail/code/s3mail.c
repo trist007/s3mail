@@ -1,4 +1,5 @@
 #include "s3mail.h"
+#include "s3mail_platform.h"
 
 void
 DecodeQPString(char *input, char* output, size_t output_size)
@@ -116,4 +117,60 @@ ChangeDateHeaderIfToday(char *date_header)
         // copy the time to email_array[count].date
         memmove(date_header, time_start, strlen(time_start) + 1);
     }
+}
+
+int
+MonthNameToNumber(char *month)
+{
+    if(strcmp(month, "Jan") == 0) return 1;
+    if(strcmp(month, "Feb") == 0) return 2;
+    if(strcmp(month, "Mar") == 0) return 3;
+    if(strcmp(month, "Apr") == 0) return 4;
+    if(strcmp(month, "May") == 0) return 5;
+    if(strcmp(month, "Jun") == 0) return 6;
+    if(strcmp(month, "Jul") == 0) return 7;
+    if(strcmp(month, "Aug") == 0) return 8;
+    if(strcmp(month, "Sep") == 0) return 9;
+    if(strcmp(month, "Oct") == 0) return 10;
+    if(strcmp(month, "Nov") == 0) return 11;
+    if(strcmp(month, "Dev") == 0) return 12;
+    
+    return(1);
+}
+
+time_t
+ParseEmailDate(char *date_header)
+{
+    struct tm tm = {0};
+    char day_name[10], month_name[10];
+    int day, year, hour, min, sec;
+    
+    if(sscanf(date_header, "%s %d %s %d %d:%d:%d",
+              day_name, &day, month_name, &year, &hour, &min, &sec) == 7)
+    {
+        tm.tm_mday = day;
+        tm.tm_year = year - 1900; // tm_year is years since 1900
+        tm.tm_hour = hour;
+        tm.tm_min = min;
+        tm.tm_sec = sec;
+        
+        // Convert month name to number
+        tm.tm_mon = MonthNameToNumber(month_name) - 1;  // tm_mon is 0-11
+        
+        return(mktime(&tm));
+    }
+    
+    return(-1);  // parse failed
+}
+
+int
+CompareByTimestamp(const void *a, const void *b)
+{
+    EmailMetadata *email1 = (EmailMetadata*)a;
+    EmailMetadata *email2 = (EmailMetadata*)b;
+    
+    if(email1->parsed_time > email2->parsed_time) return -1;
+    if(email1->parsed_time < email2->parsed_time) return 1;
+    
+    return(0);
 }

@@ -107,6 +107,7 @@ typedef struct {
     char from[256];
     char date[256];
     FILETIME timestamp;
+    time_t parsed_time;
     DWORD file_size;
 } EmailMetadata;
 

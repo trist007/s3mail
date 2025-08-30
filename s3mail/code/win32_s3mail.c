@@ -566,12 +566,15 @@ Win32ExtractHeader(thread_context *Thread, char *date, EmailMetadata *email_arra
             }
             case HEADER_DATE:
             {
-                if(CheckIfEmailReceivedToday(date, Match))
+                /*
+if(CheckIfEmailReceivedToday(date, Match))
                 {
                     // Change to just show time implying it was received today
                     ChangeDateHeaderIfToday(Match);
                 }
+*/
                 snprintf(email_array[count].date, sizeof(email_array[count].date), "%s", Match);
+                email_array[count].parsed_time = ParseEmailDate(Match);
                 break;
             }
         }
@@ -894,7 +897,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     char date[32];
     GetDate(date, sizeof(date));
     
-    
+    // Extract email Headers
     Win32ExtractHeader(&Thread, date, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
                        "C:/Users/Tristan/.email", HEADER_FROM);
     Win32ExtractHeader(&Thread, date, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
@@ -902,6 +905,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     Win32ExtractHeader(&Thread, date, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
                        "C:/Users/Tristan/.email", HEADER_DATE);
     
+    // sort emails by Date Header
+    qsort(GameState.email_array, GameState.email_count, sizeof(EmailMetadata), CompareByTimestamp);
     
     if (gamecode.is_valid)
     {

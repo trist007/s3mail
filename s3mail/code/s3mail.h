@@ -14,5 +14,8 @@ void DecodeSubjectIfNeeded(char *subject);
 void GetDate(char *date, size_t buffer_size);
 int CheckIfEmailReceivedToday(char *date, char *date_header);
 void ChangeDateHeaderIfToday(char *date_header);
+time_t ParseEmailDate(char *date_header);
+int MonthNameToNumber(char *month);
+int CompareByTimestamp(const void *a, const void *b);
 
 #endif //S3MAIL_H
