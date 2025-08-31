@@ -159,39 +159,32 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->contact_list.item_count = 4;
         GameState->contact_list.selected_item = -1;
         
-        GameState->email_list.x = 220;
-        GameState->email_list.y = 40;
-        GameState->email_list.width = 2000;
-        GameState->email_list.height = 1180;
-        
-        /*
-        StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_array[0].from), GameState->email_array[0].from);
-        StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_array[0].subject), GameState->email_array[0].subject);
-        StringCchCopy(GameState->email_list.items[0], sizeof(GameState->email_array[0].date), GameState->email_array[0].date);
-*/
-        
-        // NOTE(trist007): testing Email headers display
-        for(int i = 0;
-            i < GameState->email_count;
-            i++)
+        if(MODE_EMAIL)
         {
-            StringCchPrintf(GameState->email_list.items[i], sizeof(GameState->email_list.items[i]),
-                            EMAIL_FORMAT,
-                            GameState->email_array[i].from,
-                            GameState->email_array[i].subject,
-                            GameState->email_array[i].date);
+            GameState->email_list.x = 220;
+            GameState->email_list.y = 40;
+            GameState->email_list.width = 2000;
+            GameState->email_list.height = 1180;
+            
+            // NOTE(trist007): testing Email headers display
+            for(int i = 0;
+                i < GameState->email_count;
+                i++)
+            {
+                StringCchPrintf(GameState->email_list.items[i], sizeof(GameState->email_list.items[i]),
+                                EMAIL_FORMAT,
+                                GameState->email_array[i].from,
+                                GameState->email_array[i].subject,
+                                GameState->email_array[i].date);
+            }
+            
+            GameState->email_list.item_count = GameState->email_count;
+            GameState->email_list.selected_item = -1;
         }
-        
-        /*
-        StringCchPrintf(GameState->email_list.items[1], sizeof(GameState->email_list.items[1]),
-                        GameState->email_array[0].subject);
-        
-        StringCchPrintf(GameState->email_list.items[1], sizeof(GameState->email_list.items[1]),
-                        GameState->email_array[0].date);
-*/
-        
-        GameState->email_list.item_count = GameState->email_count;
-        GameState->email_list.selected_item = -1;
+        else // MODE_READING_EMAIL
+        {
+            
+        }
         
         
         // Initialize starting mode
@@ -298,8 +291,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     if(GameState->email_list.item_count > 0)
                     {
                         GameState->email_list.selected_item = 0;
-                    }
-                    break;
+                    } break;
                 }
             }
         } break;
@@ -360,23 +352,22 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 case VK_RETURN:
                 {
                     GameState->current_mode = MODE_READING_EMAIL;
-                    break;
-                }
+                    DEBUGPlatformReadEntireFile(Thread, GameState->email_array.filename);
+                    
+                } break;
                 
                 // back to preview mode
                 case '/':
                 {
                     GameState->show_aws_output = false;
-                    break;
-                }
+                } break;
                 
                 case 'I':
                 // Go back to folder mode
                 {
                     GameState->current_mode = MODE_FOLDER;
                     GameState->email_list.selected_item = -1;
-                    break;
-                }
+                } break;
             }
         } break;
         
@@ -393,43 +384,37 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 case VK_SPACE:
                 {
                     // code for scrolling down by a page
-                    break;
-                }
+                } break;
                 
                 // delete email
                 case 'D':
                 {
                     // code for deleting email
-                    break;
-                }
+                } break;
                 
                 // forward email
                 case 'F':
                 {
                     // code for forwarding email
-                    break;
-                }
+                } break;
                 
                 // reply email
                 case 'R':
                 {
                     // code for reply email
-                    break;
-                }
+                } break;
                 
                 // show headers
                 case 'H':
                 {
                     // code for show email headers
-                    break;
-                }
+                } break;
                 
                 // go back to email_list
                 case 'I':
                 {
                     GameState->current_mode = MODE_EMAIL;
-                    break;
-                }
+                } break;
             }
             // Reading email mode handling
         } break;

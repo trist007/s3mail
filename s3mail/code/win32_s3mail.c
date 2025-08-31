@@ -4,9 +4,9 @@
 #include "stb_truetype.h"
 #include <GL/gl.h>
 
-global_variable bool32 GlobalRunning;
 
 // Platform state
+global_variable bool32 GlobalRunning;
 global_variable HDC g_hdc = 0;
 global_variable HGLRC g_hglrc = 0;
 
