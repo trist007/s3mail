@@ -138,6 +138,7 @@ typedef struct {
     // email
     EmailMetadata *email_array;
     int32 email_count;
+    char email_content[4096];
     
     // Memory
     void *permanent_storage;
