@@ -37,8 +37,11 @@ typedef double real64;
 #define false 0
 
 // resolution
-#define WINDOW_WIDTH_HD 2160
-#define WINDOW_HEIGHT_HD 1440
+//#define WINDOW_WIDTH_HD 2160
+//#define WINDOW_HEIGHT_HD 1440
+#define WINDOW_WIDTH_HD 1920
+#define WINDOW_HEIGHT_HD 1080
+
 
 #if S3MAIL_SLOW
 #define Assert(Expression) if(!(Expression)) {*(int *)0 = 0;}

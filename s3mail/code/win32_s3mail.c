@@ -825,14 +825,15 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     
     if (!RegisterClass(&wc)) return 1;
     
-    HWND Window = CreateWindowEx(WS_EX_TOPMOST,
+    //HWND Window = CreateWindowEx(WS_EX_TOPMOST,
+    HWND Window = CreateWindowEx(WS_EX_OVERLAPPEDWINDOW,
                                  "S3MailWindow",
                                  "S3Mail",
-                                 WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-                                 3000,
-                                 0,
-                                 WINDOW_WIDTH_HD,
-                                 WINDOW_HEIGHT_HD,
+                                 WS_OVERLAPPEDWINDOW|WS_VISIBLE,
+                                 CW_USEDEFAULT,
+                                 CW_USEDEFAULT,
+                                 CW_USEDEFAULT,
+                                 CW_USEDEFAULT,
                                  0,
                                  0,
                                  hInstance,
@@ -897,13 +898,38 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     }
     
     
+    char PathToFont[256];
+    
     if (Window)
     {
-        
         if (!Win32InitOpenGL(Window)) return -1;
         //Win32HandleResizey(state, state.window_width, state.window_height); 
         Win32HandleResizey(WINDOW_WIDTH_HD, WINDOW_HEIGHT_HD);
-        if (!Win32InitFont(&GameState, "C:/dev/s3mail/s3mail/code/fonts/liberation-mono.ttf"))
+        
+        char *buffer = 0;
+        DWORD size = GetEnvironmentVariable("HOMEPATH", NULL, 0);
+        if(size)
+        {
+            buffer = malloc(size);
+            if(buffer && GetEnvironmentVariable("HOMEPATH", buffer, size) > 0)
+            {
+                for(char *p = buffer;
+                    *p;
+                    p++)
+                {
+                    // NOTE(trist007): needs an escape char '\'
+                    if(*p == '\\')
+                    {
+                        *p = '/';
+                    }
+                }
+                snprintf(PathToFont, sizeof(PathToFont), "C:%s/dev/s3mail/s3mail/code/fonts/liberation-mono.ttf", buffer);
+            }
+            
+            free(buffer);
+        }
+        
+        if (!Win32InitFont(&GameState, PathToFont))
         {
             MessageBox(Window, "Failed to load font", "Warning", MB_OK);
         }
