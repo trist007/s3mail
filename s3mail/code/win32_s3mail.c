@@ -923,7 +923,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                         *p = '/';
                     }
                 }
-                snprintf(PathToFont, sizeof(PathToFont), "C:%s/dev/s3mail/s3mail/code/fonts/liberation-mono.ttf", buffer);
+                //snprintf(PathToFont, sizeof(PathToFont), "C:%s/dev/s3mail/s3mail/code/fonts/liberation-mono.ttf", buffer);
+                strcpy(PathToFont, "C:/dev/s3mail/s3mail/code/fonts/liberation-mono.ttf");
             }
             
             free(buffer);
