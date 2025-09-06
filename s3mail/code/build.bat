@@ -13,12 +13,12 @@ echo WAITING FOR PDB > lock.tmp
 
 echo Building s3mail_game.dll...
 REM cl /LD /Zi /Od /nologo /I.. ..\s3mail_game.cpp /link /EXPORT:GameUpdateAndRender /EXPORT:GameHandleKeyPress /OUT:s3mail_game.dll
-cl %CommonCompilerFlags% ..\s3mail\code\s3mail_game.c /link /DLL -EXPORT:GameUpdateAndRender -EXPORT:GameHandleKeyPress -EXPORT:GameInitializeUI -Out:s3mail_game.dll
+cl %CommonCompilerFlags% ..\s3mail\code\s3mail_game.cpp /link /DLL -EXPORT:GameUpdateAndRender -EXPORT:GameHandleKeyPress -EXPORT:GameInitializeUI -Out:s3mail_game.dll
 
 del lock.tmp
 
 REM echo Building s3mail.exe
 REM cl /Zi /Od /nologo /I.. ..\s3mail.c opengl32.lib gdi32.lib user32.lib kernel32.lib /Fe:s3mail.exe
- cl %CommonCompilerFlags% ..\s3mail\code\win32_s3mail.c ..\s3mail\code\s3mail.c -Fmwin32_s3mail.map /link  %CommonLinkerFlags%
+ cl %CommonCompilerFlags% ..\s3mail\code\win32_s3mail.cpp ..\s3mail\code\s3mail.cpp -Fmwin32_s3mail.map /link  %CommonLinkerFlags%
 
 popd

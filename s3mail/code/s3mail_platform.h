@@ -36,7 +36,7 @@ typedef double real64;
 #define true 1
 #define false 0
 
-// resolution
+// resolution 16:9
 //#define WINDOW_WIDTH_HD 2160
 //#define WINDOW_HEIGHT_HD 1440
 #define WINDOW_WIDTH_HD 1920
@@ -201,7 +201,7 @@ typedef struct {
     debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
     debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
     int (*ListFilesInDirectory)(char *directory, EmailMetadata **email_array);
-    DWORD (*GetCurrentWorkingDirectory)();
+    DWORD (*GetCurrentWorkingDirectory)(char *dir);
     
     // Game state
     game_state *GameState;
