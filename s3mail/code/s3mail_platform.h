@@ -75,6 +75,22 @@ typedef struct {
 } UIButton;
 
 typedef struct {
+    float x_ratio, y_ratio, width_ratio, height_ratio;
+    float x, y, width, height;
+    char text[256];
+    int is_hovered;
+    int is_pressed;
+} UIButtonRatio;
+
+typedef struct {
+    float x_ratio, y_ratio, width_ratio, height_ratio;
+    float x, y, width, height;
+    char items[MAX_EMAILS][256];
+    int item_count;
+    int selected_item;
+} UIListRatio;
+
+typedef struct {
     float x, y, width, height;
     char items[MAX_EMAILS][256];
     int item_count;
@@ -123,11 +139,11 @@ typedef struct {
     app_mode current_mode;
     
     // UI elements
-    UIButton compose_button;
-    UIButton delete_button;
-    UIList folder_list;
-    UIList email_list;
-    UIList contact_list;
+    UIButtonRatio compose_button_ratio;
+    UIButtonRatio delete_button_ratio;
+    UIListRatio folder_list_ratio;
+    UIListRatio email_list_ratio;
+    UIListRatio contact_list_ratio;
     
     // OpenGL font data
     GLuint font_texture_id;
@@ -181,7 +197,9 @@ typedef struct {
     // Rendering functions
     void (*SetColor)(float r, float g, float b);
     void (*DrawRect)(float x, float y, float width, float height);
+    void (*DrawRectRatio)(float x, float y, float width, float height);
     void (*DrawRectOutline)(float x, float y, float width, float height);
+    void (*DrawRectOutlineRatio)(float x, float y, float width, float height);
     void (*DrawText)(game_state *GameState, const char* text, float x, float y);
     void (*HandleResizey)(int width, int height);
     

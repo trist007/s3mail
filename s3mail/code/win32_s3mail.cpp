@@ -16,9 +16,39 @@ void Win32SetColor(float r, float g, float b)
     glColor3f(r, g, b);
 }
 
+void Win32DrawRectRatio(float x, float y, float width, float height)
+{
+    x *= WINDOW_WIDTH_HD;
+    y *= WINDOW_HEIGHT_HD;
+    width *= WINDOW_WIDTH_HD;
+    height *= WINDOW_HEIGHT_HD;
+    
+    glBegin(GL_QUADS);
+    glVertex2f(x, y);
+    glVertex2f(x + width, y);
+    glVertex2f(x + width, y + height);
+    glVertex2f(x, y + height);
+    glEnd();
+}
+
 void Win32DrawRect(float x, float y, float width, float height)
 {
     glBegin(GL_QUADS);
+    glVertex2f(x, y);
+    glVertex2f(x + width, y);
+    glVertex2f(x + width, y + height);
+    glVertex2f(x, y + height);
+    glEnd();
+}
+
+void Win32DrawRectOutlineRatio(float x, float y, float width, float height)
+{
+    x *= WINDOW_WIDTH_HD;
+    y *= WINDOW_HEIGHT_HD;
+    width *= WINDOW_WIDTH_HD;
+    height *= WINDOW_HEIGHT_HD;
+    
+    glBegin(GL_LINE_LOOP);
     glVertex2f(x, y);
     glVertex2f(x + width, y);
     glVertex2f(x + width, y + height);
@@ -730,10 +760,10 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, Plat
                 ReleaseCapture();
                 
                 // Handle button clicks
-                if (GameState->compose_button.is_pressed) {
+                if (GameState->compose_button_ratio.is_pressed) {
                     MessageBox(Message.hwnd, "Compose clicked!", "S3Mail", MB_OK);
                 }
-                if (GameState->delete_button.is_pressed) {
+                if (GameState->delete_button_ratio.is_pressed) {
                     MessageBox(Message.hwnd, "Delete clicked!", "S3Mail", MB_OK);
                 }
                 InvalidateRect(Message.hwnd, 0, FALSE);
@@ -846,7 +876,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     PlatformAPI win32 = {};
     win32.SetColor = Win32SetColor;
     win32.DrawRect = Win32DrawRect;
+    win32.DrawRectRatio = Win32DrawRectRatio;
     win32.DrawRectOutline = Win32DrawRectOutline;
+    win32.DrawRectOutlineRatio = Win32DrawRectOutlineRatio;
     win32.DrawText = Win32DrawText;
     win32.HandleResizey = Win32HandleResizey;
     win32.PointInRect = Win32PointInRect;
