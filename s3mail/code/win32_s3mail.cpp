@@ -760,10 +760,10 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, Plat
                 ReleaseCapture();
                 
                 // Handle button clicks
-                if (GameState->compose_button_ratio.is_pressed) {
+                if (GameState->compose_button.is_pressed) {
                     MessageBox(Message.hwnd, "Compose clicked!", "S3Mail", MB_OK);
                 }
-                if (GameState->delete_button_ratio.is_pressed) {
+                if (GameState->delete_button.is_pressed) {
                     MessageBox(Message.hwnd, "Delete clicked!", "S3Mail", MB_OK);
                 }
                 InvalidateRect(Message.hwnd, 0, FALSE);

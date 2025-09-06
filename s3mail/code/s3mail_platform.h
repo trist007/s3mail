@@ -139,11 +139,11 @@ typedef struct {
     app_mode current_mode;
     
     // UI elements
-    UIButtonRatio compose_button_ratio;
-    UIButtonRatio delete_button_ratio;
-    UIListRatio folder_list_ratio;
-    UIListRatio email_list_ratio;
-    UIListRatio contact_list_ratio;
+    UIButtonRatio compose_button;
+    UIButtonRatio delete_button;
+    UIListRatio folder_list;
+    UIListRatio email_list;
+    UIListRatio contact_list;
     
     // OpenGL font data
     GLuint font_texture_id;

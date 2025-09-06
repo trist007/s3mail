@@ -210,46 +210,46 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->window_height = WINDOW_HEIGHT_HD;
         
         // Initialize UI elements
-        GameState->compose_button_ratio.x_ratio = 0.0052f;
-        GameState->compose_button_ratio.y_ratio = 0.7731f;
-        GameState->compose_button_ratio.width_ratio = 0.0521f;
-        GameState->compose_button_ratio.height_ratio = 0.02778;
-        StringCchCopy(GameState->compose_button_ratio.text,
-                      ArrayCount(GameState->compose_button_ratio.text), "Compose");
-        GameState->compose_button_ratio.is_hovered = 0;
-        GameState->compose_button_ratio.is_pressed = 0;
+        GameState->compose_button.x_ratio = 0.0052f;
+        GameState->compose_button.y_ratio = 0.7731f;
+        GameState->compose_button.width_ratio = 0.0521f;
+        GameState->compose_button.height_ratio = 0.02778;
+        StringCchCopy(GameState->compose_button.text,
+                      ArrayCount(GameState->compose_button.text), "Compose");
+        GameState->compose_button.is_hovered = 0;
+        GameState->compose_button.is_pressed = 0;
         
-        GameState->delete_button_ratio.x_ratio = 0.0625f;
-        GameState->delete_button_ratio.y_ratio = 0.7731f;
-        GameState->delete_button_ratio.width_ratio = 0.0469f;
-        GameState->delete_button_ratio.height_ratio = 0.0278f;
-        StringCchCopy(GameState->delete_button_ratio.text,
-                      ArrayCount(GameState->delete_button_ratio.text), "Delete");
-        GameState->delete_button_ratio.is_hovered = 0;
-        GameState->delete_button_ratio.is_pressed = 0;
+        GameState->delete_button.x_ratio = 0.0625f;
+        GameState->delete_button.y_ratio = 0.7731f;
+        GameState->delete_button.width_ratio = 0.0469f;
+        GameState->delete_button.height_ratio = 0.0278f;
+        StringCchCopy(GameState->delete_button.text,
+                      ArrayCount(GameState->delete_button.text), "Delete");
+        GameState->delete_button.is_hovered = 0;
+        GameState->delete_button.is_pressed = 0;
         
-        GameState->folder_list_ratio.x_ratio = 0.0052f;
-        GameState->folder_list_ratio.y_ratio = 0.6435f;
-        GameState->folder_list_ratio.width_ratio = 0.1042f;
-        GameState->folder_list_ratio.height_ratio = 0.1157f;
-        StringCchCopy(GameState->folder_list_ratio.items[0], sizeof(GameState->folder_list_ratio.items[0]), "Inbox");
-        StringCchCopy(GameState->folder_list_ratio.items[1], sizeof(GameState->folder_list_ratio.items[1]), "Sent");
-        StringCchCopy(GameState->folder_list_ratio.items[2], sizeof(GameState->folder_list_ratio.items[2]), "Draft");
-        StringCchCopy(GameState->folder_list_ratio.items[3], sizeof(GameState->folder_list_ratio.items[3]), "Junk");
-        StringCchCopy(GameState->folder_list_ratio.items[4], sizeof(GameState->folder_list_ratio.items[4]), "Trash");
-        GameState->folder_list_ratio.item_count = 5;
-        GameState->folder_list_ratio.selected_item = 0;
+        GameState->folder_list.x_ratio = 0.0052f;
+        GameState->folder_list.y_ratio = 0.6435f;
+        GameState->folder_list.width_ratio = 0.1042f;
+        GameState->folder_list.height_ratio = 0.1157f;
+        StringCchCopy(GameState->folder_list.items[0], sizeof(GameState->folder_list.items[0]), "Inbox");
+        StringCchCopy(GameState->folder_list.items[1], sizeof(GameState->folder_list.items[1]), "Sent");
+        StringCchCopy(GameState->folder_list.items[2], sizeof(GameState->folder_list.items[2]), "Draft");
+        StringCchCopy(GameState->folder_list.items[3], sizeof(GameState->folder_list.items[3]), "Junk");
+        StringCchCopy(GameState->folder_list.items[4], sizeof(GameState->folder_list.items[4]), "Trash");
+        GameState->folder_list.item_count = 5;
+        GameState->folder_list.selected_item = 0;
         
-        GameState->contact_list_ratio.x_ratio = 0.0052f;
-        GameState->contact_list_ratio.y_ratio = 0.5370f;
-        GameState->contact_list_ratio.width_ratio = 0.1042f;
-        GameState->contact_list_ratio.height_ratio = 0.0926f;
-        StringCchCopy(GameState->contact_list_ratio.items[0], sizeof(GameState->contact_list_ratio.items[0]), "Papi");
-        StringCchCopy(GameState->contact_list_ratio.items[1], sizeof(GameState->contact_list_ratio.items[1]), "Mom");
-        StringCchCopy(GameState->contact_list_ratio.items[2], sizeof(GameState->contact_list_ratio.items[2]), "Glen");
-        StringCchCopy(GameState->contact_list_ratio.items[3], sizeof(GameState->contact_list_ratio.items[3]), "Vito");
-        GameState->contact_list_ratio.item_count = 4;
-        GameState->contact_list_ratio.selected_item = -1;
+        GameState->contact_list.x_ratio = 0.0052f;
+        GameState->contact_list.y_ratio = 0.5370f;
+        GameState->contact_list.width_ratio = 0.1042f;
+        GameState->contact_list.height_ratio = 0.0926f;
+        StringCchCopy(GameState->contact_list.items[0], sizeof(GameState->contact_list.items[0]), "Papi");
+        StringCchCopy(GameState->contact_list.items[1], sizeof(GameState->contact_list.items[1]), "Mom");
+        StringCchCopy(GameState->contact_list.items[2], sizeof(GameState->contact_list.items[2]), "Glen");
+        StringCchCopy(GameState->contact_list.items[3], sizeof(GameState->contact_list.items[3]), "Vito");
+        GameState->contact_list.item_count = 4;
+        GameState->contact_list.selected_item = -1;
         
         switch(GameState->current_mode)
         {
@@ -257,25 +257,25 @@ GAME_INITIALIZE_UI(GameInitializeUI)
             case MODE_FOLDER:
             case MODE_EMAIL:
             {
-                GameState->email_list_ratio.x_ratio = 0.1146f;
-                GameState->email_list_ratio.y_ratio= 0.0092f;
-                GameState->email_list_ratio.width_ratio = 1.0f;
-                GameState->email_list_ratio.height_ratio = 0.75f;
+                GameState->email_list.x_ratio = 0.1146f;
+                GameState->email_list.y_ratio= 0.0092f;
+                GameState->email_list.width_ratio = 1.0f;
+                GameState->email_list.height_ratio = 0.75f;
                 
                 // NOTE(trist007): testing Email headers display
                 for(int i = 0;
                     i < GameState->email_count;
                     i++)
                 {
-                    StringCchPrintf(GameState->email_list_ratio.items[i], sizeof(GameState->email_list_ratio.items[i]),
+                    StringCchPrintf(GameState->email_list.items[i], sizeof(GameState->email_list.items[i]),
                                     EMAIL_FORMAT,
                                     GameState->email_array[i].from,
                                     GameState->email_array[i].subject,
                                     GameState->email_array[i].date);
                 }
                 
-                GameState->email_list_ratio.item_count = GameState->email_count;
-                GameState->email_list_ratio.selected_item = -1;
+                GameState->email_list.item_count = GameState->email_count;
+                GameState->email_list.selected_item = -1;
             }
             case MODE_READING_EMAIL:
             {
@@ -303,18 +303,18 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     platform->DrawRectOutlineRatio(0.0f, 0.8102f, 1.0f, 0.1852f);
     
     // Update UI elements
-    UpdateButtonRatio(&GameState->compose_button_ratio, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
-    UpdateButtonRatio(&GameState->delete_button_ratio, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
-    UpdateListRatio(&GameState->folder_list_ratio, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
-    UpdateListRatio(&GameState->email_list_ratio, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
-    UpdateListRatio(&GameState->contact_list_ratio, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
+    UpdateButtonRatio(&GameState->compose_button, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
+    UpdateButtonRatio(&GameState->delete_button, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
+    UpdateListRatio(&GameState->folder_list, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
+    UpdateListRatio(&GameState->email_list, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
+    UpdateListRatio(&GameState->contact_list, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
     
     // Render UI elements
-    RenderButtonRatio(&GameState->compose_button_ratio, platform);
-    RenderButtonRatio(&GameState->delete_button_ratio, platform);
-    RenderListRatio(&GameState->folder_list_ratio, platform);
-    RenderListWithHeader(&GameState->email_list_ratio, platform);
-    RenderListRatio(&GameState->contact_list_ratio, platform);
+    RenderButtonRatio(&GameState->compose_button, platform);
+    RenderButtonRatio(&GameState->delete_button, platform);
+    RenderListRatio(&GameState->folder_list, platform);
+    RenderListWithHeader(&GameState->email_list, platform);
+    RenderListRatio(&GameState->contact_list, platform);
     
     // Print Legend From | Subject | Received
     /*
@@ -330,10 +330,10 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
         // show aws output instead of preview
         platform->DrawText(platform->GameState, GameState->aws_output_buffer, 640, 320);
     }
-    else if (GameState->email_list_ratio.selected_item >= 0)
+    else if (GameState->email_list.selected_item >= 0)
     {
         char preview_text[256];
-        sprintf_s(preview_text, sizeof(preview_text), "Preview of %s - Hot Reloaded!", GameState->email_list_ratio.items[GameState->email_list_ratio.selected_item]);
+        sprintf_s(preview_text, sizeof(preview_text), "Preview of %s - Hot Reloaded!", GameState->email_list.items[GameState->email_list.selected_item]);
         platform->DrawText(platform->GameState, preview_text, 640, 320);
     }
     
@@ -344,10 +344,10 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     platform->DrawText(platform->GameState, "S3Mail - Hot Reloadable Ready!", 10, 8);
     
     // Handle button clicks
-    if (GameState->compose_button_ratio.is_pressed) {
+    if (GameState->compose_button.is_pressed) {
         platform->ShowMessage(platform->Window, "Compose clicked from hot-reloaded DLL!");
     }
-    if (GameState->delete_button_ratio.is_pressed) {
+    if (GameState->delete_button.is_pressed) {
         platform->ShowMessage(platform->Window, "Delete clicked from hot-reloaded DLL!");
     }
 }
@@ -365,33 +365,33 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
             {
                 case 'K':
                 // Move up in folder list
-                if (GameState->folder_list_ratio.selected_item == 0)
+                if (GameState->folder_list.selected_item == 0)
                 {
-                    (GameState->folder_list_ratio.selected_item = GameState->folder_list_ratio.item_count - 1);
+                    (GameState->folder_list.selected_item = GameState->folder_list.item_count - 1);
                 } 
                 else
                 {
-                    GameState->folder_list_ratio.selected_item--;
+                    GameState->folder_list.selected_item--;
                 } break;
                 
                 case 'J':
                 // Move down in folder list
-                if (GameState->folder_list_ratio.selected_item == (GameState->folder_list_ratio.item_count - 1))
+                if (GameState->folder_list.selected_item == (GameState->folder_list.item_count - 1))
                 {
-                    GameState->folder_list_ratio.selected_item = 0;
+                    GameState->folder_list.selected_item = 0;
                 }
                 else
                 {
-                    GameState->folder_list_ratio.selected_item++;
+                    GameState->folder_list.selected_item++;
                 } break;
                 
                 case VK_SPACE:
                 // Enter email mode
                 {
                     GameState->current_mode = MODE_EMAIL;
-                    if(GameState->email_list_ratio.item_count > 0)
+                    if(GameState->email_list.item_count > 0)
                     {
-                        GameState->email_list_ratio.selected_item = 0;
+                        GameState->email_list.selected_item = 0;
                     } break;
                 }
             }
@@ -403,24 +403,24 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
             {
                 case 'K':
                 // Move up in email list
-                if (GameState->email_list_ratio.selected_item == 0)
+                if (GameState->email_list.selected_item == 0)
                 {
-                    (GameState->email_list_ratio.selected_item = GameState->email_list_ratio.item_count - 1);
+                    (GameState->email_list.selected_item = GameState->email_list.item_count - 1);
                 } 
                 else
                 {
-                    GameState->email_list_ratio.selected_item--;
+                    GameState->email_list.selected_item--;
                 } break;
                 
                 case 'J':
                 // Move down in email list
-                if (GameState->email_list_ratio.selected_item == (GameState->email_list_ratio.item_count - 1))
+                if (GameState->email_list.selected_item == (GameState->email_list.item_count - 1))
                 {
-                    GameState->email_list_ratio.selected_item = 0;
+                    GameState->email_list.selected_item = 0;
                 }
                 else
                 {
-                    GameState->email_list_ratio.selected_item++;
+                    GameState->email_list.selected_item++;
                 } break;
                 
                 case 'D':
@@ -454,7 +454,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 {
                     GameState->current_mode = MODE_READING_EMAIL;
                     
-                    char *filename = GameState->email_array[GameState->email_list_ratio.selected_item].filename;
+                    char *filename = GameState->email_array[GameState->email_list.selected_item].filename;
                     
                     debug_read_file_result Result = platform->DEBUGPlatformReadEntireFile(&Thread, filename);
                     memmove(GameState->email_content, Result.Contents, Result.ContentsSize);
@@ -470,7 +470,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 // Go back to folder mode
                 {
                     GameState->current_mode = MODE_FOLDER;
-                    GameState->email_list_ratio.selected_item = -1;
+                    GameState->email_list.selected_item = -1;
                 } break;
             }
         } break;
