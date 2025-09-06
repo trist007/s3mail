@@ -68,6 +68,9 @@ void Win32DrawRectOutline(float x, float y, float width, float height)
 
 void Win32DrawText(game_state *GameState, const char *text, float x, float y)
 {
+    //x *= WINDOW_WIDTH_HD;
+    //y *= WINDOW_HEIGHT_HD;
+    
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -82,6 +85,65 @@ void Win32DrawText(game_state *GameState, const char *text, float x, float y)
          i++)
     {
         if (text[i] >= 32 && text[i] < 128)
+        {
+            stbtt_aligned_quad q;
+            stbtt_GetBakedQuad(GameState->cdata,
+                               512,
+                               512,
+                               text[i] - 32,
+                               &current_x,
+                               &current_y,
+                               &q,
+                               1);
+            
+            float y_flipped_0 = y - (q.y0 - y);
+            float y_flipped_1 = y - (q.y1 - y);
+            
+            glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, y_flipped_0);
+            glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, y_flipped_0);
+            glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, y_flipped_1);
+            glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, y_flipped_1);
+        }
+    }
+    glEnd();
+    
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+}
+
+void Win32DrawTextEmail(game_state *GameState, const char *text, float x, float y)
+{
+    //x *= WINDOW_WIDTH_HD;
+    //y *= WINDOW_HEIGHT_HD;
+    
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBindTexture(GL_TEXTURE_2D, GameState->font_texture_id);
+    
+    float current_x = x;
+    float current_y = y;
+    float line_height = 30.0f;
+    
+    glBegin(GL_QUADS);
+    for (int i = 0;
+         text[i];
+         i++)
+    {
+        if(text[i] == '\n' || text[i] == '\r')
+        {
+            // Handle newline
+            current_x = x;  // reset to start of line
+            current_y -= line_height;   // move down one line
+            
+            // ski; \r\n combinations
+            if(text[i] == '\r' && text[i+1] == '\n')
+            {
+                i++;  // skip to next newline
+            }
+            
+        }
+        else if(text[i] >= 32 && text[i] < 128)
         {
             stbtt_aligned_quad q;
             stbtt_GetBakedQuad(GameState->cdata,
@@ -880,6 +942,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.DrawRectOutline = Win32DrawRectOutline;
     win32.DrawRectOutlineRatio = Win32DrawRectOutlineRatio;
     win32.DrawText = Win32DrawText;
+    win32.DrawTextEmail = Win32DrawTextEmail;
     win32.HandleResizey = Win32HandleResizey;
     win32.PointInRect = Win32PointInRect;
     win32.ShowMessage = Win32ShowMessage;

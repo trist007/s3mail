@@ -91,6 +91,14 @@ typedef struct {
 } UIListRatio;
 
 typedef struct {
+    float x_ratio, y_ratio, width_ratio, height_ratio;
+    float x, y, width, height;
+    char items[MAX_EMAILS][256];
+    int item_count;
+    int selected_item;
+} EmailContent;
+
+typedef struct {
     float x, y, width, height;
     char items[MAX_EMAILS][256];
     int item_count;
@@ -144,6 +152,7 @@ typedef struct {
     UIListRatio folder_list;
     UIListRatio email_list;
     UIListRatio contact_list;
+    EmailContent email;
     
     // OpenGL font data
     GLuint font_texture_id;
@@ -201,6 +210,7 @@ typedef struct {
     void (*DrawRectOutline)(float x, float y, float width, float height);
     void (*DrawRectOutlineRatio)(float x, float y, float width, float height);
     void (*DrawText)(game_state *GameState, const char* text, float x, float y);
+    void (*DrawTextEmail)(game_state *GameState, const char* text, float x, float y);
     void (*HandleResizey)(int width, int height);
     
     // Utility functions
