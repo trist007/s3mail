@@ -1,4 +1,5 @@
 #include "s3mail_platform.h"
+#include "s3mail.h"
 #include <GL/gl.h>
 
 // Email Layout format string
@@ -15,24 +16,24 @@ void UpdateButtonRatio(UIButtonRatio* btn, int mouse_x, int mouse_y, int mouse_d
     btn->height = WINDOW_HEIGHT_HD * btn->height_ratio;
     
     int gl_y = window_height - mouse_y;
-    btn->is_hovered = platform->PointInRect(mouse_x, gl_y, btn->x, btn->y, btn->width, btn->height);
+    btn->is_hovered =  PointInRect(mouse_x, gl_y, btn->x, btn->y, btn->width, btn->height);
     btn->is_pressed = btn->is_hovered && mouse_down;
 }
 
 void UpdateButton(UIButton* btn, int mouse_x, int mouse_y, int mouse_down, int window_height, PlatformAPI* platform) {
     
     int gl_y = window_height - mouse_y;
-    btn->is_hovered = platform->PointInRect(mouse_x, gl_y, btn->x, btn->y, btn->width, btn->height);
+    btn->is_hovered =  PointInRect(mouse_x, gl_y, btn->x, btn->y, btn->width, btn->height);
     btn->is_pressed = btn->is_hovered && mouse_down;
 }
 
 void RenderButtonRatio(UIButtonRatio* btn, PlatformAPI* platform) {
     if (btn->is_pressed) {
-        platform->SetColor(0.2f, 0.2f, 0.6f);
+        SetColor(0.2f, 0.2f, 0.6f);
     } else if (btn->is_hovered) {
-        platform->SetColor(0.4f, 0.4f, 0.8f);
+        SetColor(0.4f, 0.4f, 0.8f);
     } else {
-        platform->SetColor(0.3f, 0.3f, 0.7f);
+        SetColor(0.3f, 0.3f, 0.7f);
     }
     
     btn->x = WINDOW_WIDTH_HD * btn->x_ratio;
@@ -40,31 +41,31 @@ void RenderButtonRatio(UIButtonRatio* btn, PlatformAPI* platform) {
     btn->width = WINDOW_WIDTH_HD * btn->width_ratio;
     btn->height = WINDOW_HEIGHT_HD * btn->height_ratio;
     
-    platform->DrawRect(btn->x, btn->y, btn->width, btn->height);
+    DrawRect(btn->x, btn->y, btn->width, btn->height);
     
-    platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawRectOutline(btn->x, btn->y, btn->width, btn->height);
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawRectOutline(btn->x, btn->y, btn->width, btn->height);
     
-    platform->SetColor(1.0f, 1.0f, 1.0f);
-    platform->DrawText(platform->GameState, btn->text, btn->x + 5, btn->y + 8);
+    SetColor(1.0f, 1.0f, 1.0f);
+    DrawText(platform->GameState, btn->text, btn->x + 5, btn->y + 8);
 }
 
 void RenderButton(UIButton* btn, PlatformAPI* platform) {
     if (btn->is_pressed) {
-        platform->SetColor(0.2f, 0.2f, 0.6f);
+        SetColor(0.2f, 0.2f, 0.6f);
     } else if (btn->is_hovered) {
-        platform->SetColor(0.4f, 0.4f, 0.8f);
+        SetColor(0.4f, 0.4f, 0.8f);
     } else {
-        platform->SetColor(0.3f, 0.3f, 0.7f);
+        SetColor(0.3f, 0.3f, 0.7f);
     }
     
-    platform->DrawRect(btn->x, btn->y, btn->width, btn->height);
+    DrawRect(btn->x, btn->y, btn->width, btn->height);
     
-    platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawRectOutline(btn->x, btn->y, btn->width, btn->height);
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawRectOutline(btn->x, btn->y, btn->width, btn->height);
     
-    platform->SetColor(1.0f, 1.0f, 1.0f);
-    platform->DrawText(platform->GameState, btn->text, btn->x + 5, btn->y + 8);
+    SetColor(1.0f, 1.0f, 1.0f);
+    DrawText(platform->GameState, btn->text, btn->x + 5, btn->y + 8);
 }
 
 void UpdateListRatio(UIListRatio* list, int mouse_x, int mouse_y, int mouse_down, int window_height, PlatformAPI* platform) {
@@ -75,7 +76,7 @@ void UpdateListRatio(UIListRatio* list, int mouse_x, int mouse_y, int mouse_down
     list->width = WINDOW_WIDTH_HD * list->width_ratio;
     list->height = WINDOW_HEIGHT_HD * list->height_ratio;
     
-    if (mouse_down && platform->PointInRect(mouse_x, gl_y, list->x, list->y, list->width, list->height)) {
+    if (mouse_down &&  PointInRect(mouse_x, gl_y, list->x, list->y, list->width, list->height)) {
         int item_height = 25;
         int clicked_item = (gl_y - list->y) / item_height;
         if (clicked_item >= 0 && clicked_item < list->item_count) {
@@ -87,7 +88,7 @@ void UpdateListRatio(UIListRatio* list, int mouse_x, int mouse_y, int mouse_down
 void UpdateList(UIList* list, int mouse_x, int mouse_y, int mouse_down, int window_height, PlatformAPI* platform) {
     int gl_y = window_height - mouse_y;
     
-    if (mouse_down && platform->PointInRect(mouse_x, gl_y, list->x, list->y, list->width, list->height)) {
+    if (mouse_down &&  PointInRect(mouse_x, gl_y, list->x, list->y, list->width, list->height)) {
         int item_height = 25;
         int clicked_item = (gl_y - list->y) / item_height;
         if (clicked_item >= 0 && clicked_item < list->item_count) {
@@ -104,15 +105,6 @@ void UpdateEmailContent(EmailContent* email, int mouse_x, int mouse_y, int mouse
     email->width = WINDOW_WIDTH_HD * email->width_ratio;
     email->height = WINDOW_HEIGHT_HD * email->height_ratio;
     
-    /*
-    if (mouse_down && platform->PointInRect(mouse_x, gl_y, email->x, email->y, email->width, email->height)) {
-int item_height = 25;
-        int clicked_item = (gl_y - email->y) / item_height;
-        if (clicked_item >= 0 && clicked_item < email->item_count) {
-            email->selected_item = clicked_item;
-        }
-    }
-*/
 }
 
 void RenderListRatio(UIListRatio* list, PlatformAPI* platform) {
@@ -123,12 +115,12 @@ void RenderListRatio(UIListRatio* list, PlatformAPI* platform) {
     list->height = WINDOW_HEIGHT_HD * list->height_ratio;
     
     // Background
-    platform->SetColor(0.9f, 0.9f, 0.9f);
-    platform->DrawRect(list->x, list->y, list->width, list->height);
+    SetColor(0.9f, 0.9f, 0.9f);
+    DrawRect(list->x, list->y, list->width, list->height);
     
     // Border
-    platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawRectOutline(list->x, list->y, list->width, list->height);
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawRectOutline(list->x, list->y, list->width, list->height);
     
     // Items
     int item_height = 25;
@@ -139,23 +131,23 @@ void RenderListRatio(UIListRatio* list, PlatformAPI* platform) {
         float item_y = (list->y + list->height) - ((i + 1) * item_height);
         
         if (i == list->selected_item) {
-            platform->SetColor(0.5f, 0.7f, 1.0f);  // You can easily tweak these colors now!
-            platform->DrawRect(list->x, item_y, list->width, item_height);
+            SetColor(0.5f, 0.7f, 1.0f);  // You can easily tweak these colors now!
+            DrawRect(list->x, item_y, list->width, item_height);
         }
         
-        platform->SetColor(0.0f, 0.0f, 0.0f);
-        platform->DrawText(platform->GameState, list->items[i], list->x + 5, item_y + 5);
+        SetColor(0.0f, 0.0f, 0.0f);
+        DrawText(platform->GameState, list->items[i], list->x + 5, item_y + 5);
     }
 }
 
 void RenderList(UIList* list, PlatformAPI* platform) {
     // Background
-    platform->SetColor(0.9f, 0.9f, 0.9f);
-    platform->DrawRect(list->x, list->y, list->width, list->height);
+    SetColor(0.9f, 0.9f, 0.9f);
+    DrawRect(list->x, list->y, list->width, list->height);
     
     // Border
-    platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawRectOutline(list->x, list->y, list->width, list->height);
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawRectOutline(list->x, list->y, list->width, list->height);
     
     // Items
     int item_height = 25;
@@ -166,12 +158,12 @@ void RenderList(UIList* list, PlatformAPI* platform) {
         float item_y = (list->y + list->height) - ((i + 1) * item_height);
         
         if (i == list->selected_item) {
-            platform->SetColor(0.5f, 0.7f, 1.0f);  // You can easily tweak these colors now!
-            platform->DrawRect(list->x, item_y, list->width, item_height);
+            SetColor(0.5f, 0.7f, 1.0f);  // You can easily tweak these colors now!
+            DrawRect(list->x, item_y, list->width, item_height);
         }
         
-        platform->SetColor(0.0f, 0.0f, 0.0f);
-        platform->DrawText(platform->GameState, list->items[i], list->x + 5, item_y + 5);
+        SetColor(0.0f, 0.0f, 0.0f);
+        DrawText(platform->GameState, list->items[i], list->x + 5, item_y + 5);
     }
 }
 
@@ -183,12 +175,12 @@ void RenderListWithHeader(UIListRatio* list, PlatformAPI* platform) {
     list->height = WINDOW_HEIGHT_HD * list->height_ratio;
     
     // Background
-    platform->SetColor(0.9f, 0.9f, 0.9f);
-    platform->DrawRect(list->x, list->y, list->width, list->height);
+    SetColor(0.9f, 0.9f, 0.9f);
+    DrawRect(list->x, list->y, list->width, list->height);
     
     // Border
-    platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawRectOutline(list->x, list->y, list->width, list->height);
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawRectOutline(list->x, list->y, list->width, list->height);
     
     // Items
     int item_height = 25;
@@ -198,10 +190,10 @@ void RenderListWithHeader(UIListRatio* list, PlatformAPI* platform) {
                     EMAIL_FORMAT, "From", "Subject", "Received");
     
     float header_y = (list->y + list->height) - item_height;  // Top row
-    platform->SetColor(0.7f, 0.7f, 0.7f);  // Different color for header
-    platform->DrawRect(list->x, header_y, list->width, item_height);
-    platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawText(platform->GameState, header_text, list->x + 5, header_y + 5);
+    SetColor(0.7f, 0.7f, 0.7f);  // Different color for header
+    DrawRect(list->x, header_y, list->width, item_height);
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawText(platform->GameState, header_text, list->x + 5, header_y + 5);
     
     for (int i = 0; i < list->item_count; i++) {
         
@@ -210,12 +202,12 @@ void RenderListWithHeader(UIListRatio* list, PlatformAPI* platform) {
         float item_y = (list->y + list->height) - ((i + 2) * item_height);
         
         if (i == list->selected_item) {
-            platform->SetColor(0.5f, 0.7f, 1.0f);  // You can easily tweak these colors now!
-            platform->DrawRect(list->x, item_y, list->width, item_height);
+            SetColor(0.5f, 0.7f, 1.0f);  // You can easily tweak these colors now!
+            DrawRect(list->x, item_y, list->width, item_height);
         }
         
-        platform->SetColor(0.0f, 0.0f, 0.0f);
-        platform->DrawText(platform->GameState, list->items[i], list->x + 5, item_y + 5);
+        SetColor(0.0f, 0.0f, 0.0f);
+        DrawText(platform->GameState, list->items[i], list->x + 5, item_y + 5);
     }
 }
 
@@ -227,24 +219,24 @@ void RenderEmailContent(EmailContent* email, PlatformAPI* platform) {
     email->height = WINDOW_HEIGHT_HD * email->height_ratio;
     
     // Background
-    platform->SetColor(0.9f, 0.9f, 0.9f);
-    platform->DrawRect(email->x, email->y, email->width, email->height);
+    SetColor(0.9f, 0.9f, 0.9f);
+    DrawRect(email->x, email->y, email->width, email->height);
     
     // Border
-    platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawRectOutline(email->x, email->y, email->width, email->height);
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawRectOutline(email->x, email->y, email->width, email->height);
     
     if(platform->GameState->email_content[0] == '\0')
     {
-        platform->SetColor(1.0f, 0.0f, 0.0f); // Red text for debug
-        platform->DrawTextEmail(platform->GameState, "EMAIL CONTENT IS EMPTY!", 
-                                (0.1146f*WINDOW_WIDTH_HD), (0.1f*WINDOW_HEIGHT_HD));
+        SetColor(1.0f, 0.0f, 0.0f); // Red text for debug
+        DrawTextEmail(platform->GameState, "EMAIL CONTENT IS EMPTY!", 
+                      (0.1146f*WINDOW_WIDTH_HD), (0.1f*WINDOW_HEIGHT_HD));
     }
     else
     {
         // Draw email content within the content area
-        platform->SetColor(0.0f, 0.0f, 0.0f);
-        platform->DrawTextEmail(platform->GameState, platform->GameState->email_content, (0.1146f*WINDOW_WIDTH_HD), (0.0092f*WINDOW_HEIGHT_HD));
+        SetColor(0.0f, 0.0f, 0.0f);
+        DrawTextEmail(platform->GameState, platform->GameState->email_content, (0.1146f*WINDOW_WIDTH_HD), (0.0092f*WINDOW_HEIGHT_HD));
     }
 }
 
@@ -324,8 +316,6 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->email_list.item_count = GameState->email_count;
         GameState->email_list.selected_item = -1;
     }
-    //platform->DrawText(platform->GameState, GameState->email_content,
-    //(0.1146f*WINDOW_WIDTH_HD), (0.0092f*WINDOW_HEIGHT_HD));
 }
 
 // Main game functions that get hot reloaded
@@ -333,13 +323,13 @@ __declspec(dllexport)
 GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     
     // Draw purple header stripe - try changing this color and recompiling!
-    platform->SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
-    //platform->DrawRect(0, 0.8102f, 1.0f, 0.1852f);
-    platform->DrawRectRatio(0.0f, 0.8102f, 1.0f, 0.1852f);
+    SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
+    //DrawRect(0, 0.8102f, 1.0f, 0.1852f);
+    DrawRectRatio(0.0f, 0.8102f, 1.0f, 0.1852f);
     
-    platform->SetColor(0.0f, 0.0f, 0.0f);
-    //platform->DrawRectOutline(0, 0.8102f, 1.0f, 0.1852f);
-    platform->DrawRectOutlineRatio(0.0f, 0.8102f, 1.0f, 0.1852f);
+    SetColor(0.0f, 0.0f, 0.0f);
+    //DrawRectOutline(0, 0.8102f, 1.0f, 0.1852f);
+    DrawRectOutlineRatio(0.0f, 0.8102f, 1.0f, 0.1852f);
     
     // Update UI elements
     UpdateButtonRatio(&GameState->compose_button, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height, platform);
@@ -384,7 +374,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     char header_text[256];
     StringCchPrintf(header_text, sizeof(header_text),
                     EMAIL_FORMAT, "From", "Subject", "Received");
-    platform->DrawText(platform->GameState, header_text, 225, 1225);
+    DrawText(platform->GameState, header_text, 225, 1225);
 */
     
     // Email preview
@@ -393,21 +383,21 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
         if(GameState->show_aws_output)
         {
             // show aws output instead of preview
-            platform->DrawText(platform->GameState, GameState->aws_output_buffer, 640, 320);
+            DrawText(platform->GameState, GameState->aws_output_buffer, 640, 320);
         }
         else if (GameState->email_list.selected_item >= 0)
         {
             char preview_text[256];
             sprintf_s(preview_text, sizeof(preview_text), "Preview of %s - Hot Reloaded!", GameState->email_list.items[GameState->email_list.selected_item]);
-            platform->DrawText(platform->GameState, preview_text, 640, 120);
+            DrawText(platform->GameState, preview_text, 640, 120);
         }
     }
     
     // Status bar
-    platform->SetColor(0.8f, 0.8f, 0.8f);
-    platform->DrawRect(0, 0, GameState->window_width, 25);
-    platform->SetColor(0.0f, 0.0f, 0.0f);
-    platform->DrawText(platform->GameState, "S3Mail - Hot Reloadable Ready!", 10, 8);
+    SetColor(0.8f, 0.8f, 0.8f);
+    DrawRect(0, 0, GameState->window_width, 25);
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawText(platform->GameState, "S3Mail - Hot Reloadable Ready!", 10, 8);
     
     // Handle button clicks
     if (GameState->compose_button.is_pressed) {
@@ -509,7 +499,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     char* output_text = platform->ReadProcessOutput(GameState->awscli.stdout_read);
                     if(output_text)
                     {
-                        //platform->DrawText(platform->GameState, output_text, 640, 320);
+                        //DrawText(platform->GameState, output_text, 640, 320);
                         strncpy(GameState->aws_output_buffer, output_text, sizeof(GameState->aws_output_buffer) - 1);
                         GameState->aws_output_buffer[sizeof(GameState->aws_output_buffer) - 1] = '\0';
                         GameState->show_aws_output = true;

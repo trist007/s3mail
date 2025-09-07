@@ -10,7 +10,6 @@
 #include <string.h>
 #include <strsafe.h>
 #include "stb_truetype.h"
-#include "s3mail.h"
 
 #define MAX_EMAILS 100
 
@@ -203,19 +202,6 @@ typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
 
 // Platform services provided by EXE to DLL
 typedef struct {
-    // Rendering functions
-    void (*SetColor)(float r, float g, float b);
-    void (*DrawRect)(float x, float y, float width, float height);
-    void (*DrawRectRatio)(float x, float y, float width, float height);
-    void (*DrawRectOutline)(float x, float y, float width, float height);
-    void (*DrawRectOutlineRatio)(float x, float y, float width, float height);
-    void (*DrawText)(game_state *GameState, const char* text, float x, float y);
-    void (*DrawTextEmail)(game_state *GameState, const char* text, float x, float y);
-    void (*HandleResizey)(int width, int height);
-    
-    // Utility functions
-    int (*PointInRect)(int px, int py, float x, float y, float width, float height);
-    
     // Platform functions
     void (*ShowMessage)(HWND Window, const char *message);
     void (*InvalidateWindow)(HWND Window);

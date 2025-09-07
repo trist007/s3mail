@@ -1,5 +1,254 @@
-#include "s3mail.h"
 #include "s3mail_platform.h"
+#include "s3mail.h"
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h"
+
+// STB TrueType functions
+int
+InitFont(game_state *GameState, const char *font_path)
+{
+    static unsigned char font_buffer[1024*1024];
+    static unsigned char *font_bitmap;
+    stbtt_fontinfo font;
+    
+    FILE *file = fopen(font_path, "rb");
+    if (!file) return 0;
+    
+    size_t size = fread(font_buffer, 1, 1024*1024, file);
+    fclose(file);
+    if (size == 0) return 0;
+    
+    stbtt_InitFont(&font, font_buffer, 0);
+    
+    font_bitmap = (unsigned char*)malloc(512*512);
+    stbtt_BakeFontBitmap(font_buffer, 0, 24.0f, font_bitmap, 512, 512, 32, 96, GameState->cdata);
+    
+    glGenTextures(1, &GameState->font_texture_id);
+    glBindTexture(GL_TEXTURE_2D, GameState->font_texture_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512, 512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, font_bitmap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    free(font_bitmap);
+    return 1;
+}
+
+// OpenGL functions
+void
+HandleResizey(int width, int height)
+{
+    if (height == 0) height = 1;
+    
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0, width, 0.0, height, -1.0, 1.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
+
+void
+SetColor(float r, float g, float b)
+{
+    glColor3f(r, g, b);
+}
+
+void
+DrawRect(float x, float y, float width, float height)
+{
+    glBegin(GL_QUADS);
+    glVertex2f(x, y);
+    glVertex2f(x + width, y);
+    glVertex2f(x + width, y + height);
+    glVertex2f(x, y + height);
+    glEnd();
+}
+
+void
+DrawRectRatio(float x, float y, float width, float height)
+{
+    x *= WINDOW_WIDTH_HD;
+    y *= WINDOW_HEIGHT_HD;
+    width *= WINDOW_WIDTH_HD;
+    height *= WINDOW_HEIGHT_HD;
+    
+    glBegin(GL_QUADS);
+    glVertex2f(x, y);
+    glVertex2f(x + width, y);
+    glVertex2f(x + width, y + height);
+    glVertex2f(x, y + height);
+    glEnd();
+}
+
+void
+DrawRectOutline(float x, float y, float width, float height)
+{
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(x, y);
+    glVertex2f(x + width, y);
+    glVertex2f(x + width, y + height);
+    glVertex2f(x, y + height);
+    glEnd();
+}
+
+void
+DrawRectOutlineRatio(float x, float y, float width, float height)
+{
+    x *= WINDOW_WIDTH_HD;
+    y *= WINDOW_HEIGHT_HD;
+    width *= WINDOW_WIDTH_HD;
+    height *= WINDOW_HEIGHT_HD;
+    
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(x, y);
+    glVertex2f(x + width, y);
+    glVertex2f(x + width, y + height);
+    glVertex2f(x, y + height);
+    glEnd();
+}
+
+void
+DrawText(game_state *GameState, const char *text, float x, float y)
+{
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBindTexture(GL_TEXTURE_2D, GameState->font_texture_id);
+    
+    float current_x = x;
+    float current_y = y;
+    
+    glBegin(GL_QUADS);
+    for (int i = 0;
+         text[i];
+         i++)
+    {
+        if (text[i] >= 32 && text[i] < 128)
+        {
+            stbtt_aligned_quad q;
+            stbtt_GetBakedQuad(GameState->cdata,
+                               512,
+                               512,
+                               text[i] - 32,
+                               &current_x,
+                               &current_y,
+                               &q,
+                               1);
+            
+            float y_flipped_0 = y - (q.y0 - y);
+            float y_flipped_1 = y - (q.y1 - y);
+            
+            glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, y_flipped_0);
+            glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, y_flipped_0);
+            glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, y_flipped_1);
+            glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, y_flipped_1);
+        }
+    }
+    glEnd();
+    
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+}
+
+void
+DrawTextEmail(game_state *GameState, const char *text, float x, float y)
+{
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBindTexture(GL_TEXTURE_2D, GameState->font_texture_id);
+    
+    float current_x = x;
+    float current_y = y;
+    float line_height = 30.0f;
+    
+    glBegin(GL_QUADS);
+    for (int i = 0;
+         text[i];
+         i++)
+    {
+        if(text[i] == '\n' || text[i] == '\r')
+        {
+            // Handle newline
+            current_x = x;  // reset to start of line
+            current_y -= line_height;   // move down one line
+            
+            // ski; \r\n combinations
+            if(text[i] == '\r' && text[i+1] == '\n')
+            {
+                i++;  // skip to next newline
+            }
+            
+        }
+        else if(text[i] >= 32 && text[i] < 128)
+        {
+            stbtt_aligned_quad q;
+            stbtt_GetBakedQuad(GameState->cdata,
+                               512,
+                               512,
+                               text[i] - 32,
+                               &current_x,
+                               &current_y,
+                               &q,
+                               1);
+            
+            float y_flipped_0 = y - (q.y0 - y);
+            float y_flipped_1 = y - (q.y1 - y);
+            
+            glTexCoord2f(q.s0, q.t0); glVertex2f(q.x0, y_flipped_0);
+            glTexCoord2f(q.s1, q.t0); glVertex2f(q.x1, y_flipped_0);
+            glTexCoord2f(q.s1, q.t1); glVertex2f(q.x1, y_flipped_1);
+            glTexCoord2f(q.s0, q.t1); glVertex2f(q.x0, y_flipped_1);
+        }
+    }
+    glEnd();
+    
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+}
+
+int
+PointInRect(int px, int py, float x, float y, float width, float height)
+{
+    return px >= x && px <= x + width && py >= y && py <= y + height;
+}
+
+// utility functions
+int
+StringLength(char *String)
+{
+    int Count = 0;
+    while(*String++)
+    {
+        ++Count;
+    }
+    return(Count);
+}
+
+void
+CatStrings(size_t SourceACount, char *SourceA,
+           size_t SourceBCount, char *SourceB,
+           size_t DestCount, char *Dest)
+{
+    // TODO(casey): Dest bounds checking!
+    
+    for(int Index = 0;
+        Index < SourceACount;
+        ++Index)
+    {
+        *Dest++ = *SourceA++;
+    }
+    
+    for(int Index = 0;
+        Index < SourceBCount;
+        ++Index)
+    {
+        *Dest++ = *SourceB++;
+    }
+    
+    *Dest++ = 0;
+}
 
 void
 DecodeQPString(char *input, char* output, size_t output_size)
@@ -31,7 +280,8 @@ DecodeQPString(char *input, char* output, size_t output_size)
     *dst = '\0';
 }
 
-void DecodeSubjectIfNeeded(char *subject)
+void
+DecodeSubjectIfNeeded(char *subject)
 {
     char *start = strstr(subject, "=?utf-8?Q?");
     if(start)
