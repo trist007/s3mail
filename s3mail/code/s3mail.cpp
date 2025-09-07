@@ -1,38 +1,15 @@
-#include "s3mail_platform.h"
-#include "s3mail.h"
-
-#define STB_TRUETYPE_IMPLEMENTATION
+#include <windows.h>
 #include "stb_truetype.h"
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "s3mail.h"
+#include "s3mail_platform.h"
 
-// STB TrueType functions
-int
-InitFont(game_state *GameState, const char *font_path)
-{
-    static unsigned char font_buffer[1024*1024];
-    static unsigned char *font_bitmap;
-    stbtt_fontinfo font;
-    
-    FILE *file = fopen(font_path, "rb");
-    if (!file) return 0;
-    
-    size_t size = fread(font_buffer, 1, 1024*1024, file);
-    fclose(file);
-    if (size == 0) return 0;
-    
-    stbtt_InitFont(&font, font_buffer, 0);
-    
-    font_bitmap = (unsigned char*)malloc(512*512);
-    stbtt_BakeFontBitmap(font_buffer, 0, 24.0f, font_bitmap, 512, 512, 32, 96, GameState->cdata);
-    
-    glGenTextures(1, &GameState->font_texture_id);
-    glBindTexture(GL_TEXTURE_2D, GameState->font_texture_id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512, 512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, font_bitmap);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    free(font_bitmap);
-    return 1;
-}
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <strsafe.h>
+#include <time.h>
+#include <GL/gl.h>
 
 // OpenGL functions
 void
@@ -109,7 +86,7 @@ DrawRectOutlineRatio(float x, float y, float width, float height)
 }
 
 void
-DrawText(game_state *GameState, const char *text, float x, float y)
+DrawTextGame(game_state *GameState, const char *text, float x, float y)
 {
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -152,7 +129,7 @@ DrawText(game_state *GameState, const char *text, float x, float y)
 }
 
 void
-DrawTextEmail(game_state *GameState, const char *text, float x, float y)
+DrawTextGameEmail(game_state *GameState, const char *text, float x, float y)
 {
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
@@ -206,6 +183,36 @@ DrawTextEmail(game_state *GameState, const char *text, float x, float y)
     
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
+}
+
+int
+InitFont(game_state *GameState, const char *font_path)
+{
+    static unsigned char font_buffer[1024*1024];
+    static unsigned char *font_bitmap;
+    stbtt_fontinfo font;
+    
+    FILE *file = fopen(font_path, "rb");
+    if (!file) return 0;
+    
+    size_t size = fread(font_buffer, 1, 1024*1024, file);
+    fclose(file);
+    if (size == 0) return 0;
+    
+    stbtt_InitFont(&font, font_buffer, 0);
+    
+    font_bitmap = (unsigned char*)malloc(512*512);
+    stbtt_BakeFontBitmap(font_buffer, 0, 24.0f, font_bitmap, 512, 512, 32, 96, GameState->cdata);
+    
+    glGenTextures(1, &GameState->font_texture_id);
+    glBindTexture(GL_TEXTURE_2D, GameState->font_texture_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512, 512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, font_bitmap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    free(font_bitmap);
+    
+    return(1);
 }
 
 int
@@ -386,31 +393,6 @@ MonthNameToNumber(char *month)
     if(strcmp(month, "Dev") == 0) return 12;
     
     return(1);
-}
-
-time_t
-ParseEmailDate(char *date_header)
-{
-    struct tm tm = {0};
-    char day_name[10], month_name[10];
-    int day, year, hour, min, sec;
-    
-    if(sscanf(date_header, "%s %d %s %d %d:%d:%d",
-              day_name, &day, month_name, &year, &hour, &min, &sec) == 7)
-    {
-        tm.tm_mday = day;
-        tm.tm_year = year - 1900; // tm_year is years since 1900
-        tm.tm_hour = hour;
-        tm.tm_min = min;
-        tm.tm_sec = sec;
-        
-        // Convert month name to number
-        tm.tm_mon = MonthNameToNumber(month_name) - 1;  // tm_mon is 0-11
-        
-        return(mktime(&tm));
-    }
-    
-    return(-1);  // parse failed
 }
 
 int

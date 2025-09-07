@@ -1,19 +1,16 @@
-/* date = July 27th 2025 2:48 pm */
-
 #ifndef S3MAIL_PLATFORM_H
 #define S3MAIL_PLATFORM_H
 
-#include <windows.h>
-#include <GL/gl.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <strsafe.h>
-#include "stb_truetype.h"
+#if COMPILER_MSVC
+#include <intrin.h>
+#endif
 
 #define MAX_EMAILS 100
 
 // Types
+#include <stdint.h>
+#include <stddef.h>
+
 typedef int8_t int8;
 typedef int16_t int16;
 typedef int32_t int32;
@@ -32,8 +29,11 @@ typedef double real64;
 #define local_persist static
 #define global_variable static
 
-#define true 1
-#define false 0
+#include <windows.h>
+#include <GL/gl.h>
+#include "stb_truetype.h"
+
+time_t ParseEmailDate(char *date_header);
 
 // resolution 16:9
 //#define WINDOW_WIDTH_HD 2160
@@ -55,6 +55,7 @@ typedef double real64;
 
 // this only works for static arrays
 #define ArrayCount(Array) (sizeof(Array) / sizeof((Array)[0]))
+
 
 inline uint32
 SafeTruncateUInt64(uint64 Value)
@@ -153,7 +154,7 @@ typedef struct {
     UIListRatio contact_list;
     EmailContent email;
     
-    // OpenGL font data
+    // font
     GLuint font_texture_id;
     stbtt_bakedchar cdata[96];
     

@@ -1,10 +1,43 @@
 #include "s3mail_platform.h"
 #include "s3mail.h"
 
+#include <windows.h>
+#include <GL/gl.h>
+#include <stdio.h>
+#include <string.h>
+#include <strsafe.h>
+#include <time.h>
+
 // Platform state
 global_variable bool32 GlobalRunning;
 global_variable HDC g_hdc = 0;
 global_variable HGLRC g_hglrc = 0;
+
+// STB TrueType functions
+time_t
+ParseEmailDate(char *date_header)
+{
+    struct tm tm = {0};
+    char day_name[10], month_name[10];
+    int day, year, hour, min, sec;
+    
+    if(sscanf(date_header, "%s %d %s %d %d:%d:%d",
+              day_name, &day, month_name, &year, &hour, &min, &sec) == 7)
+    {
+        tm.tm_mday = day;
+        tm.tm_year = year - 1900; // tm_year is years since 1900
+        tm.tm_hour = hour;
+        tm.tm_min = min;
+        tm.tm_sec = sec;
+        
+        // Convert month name to number
+        tm.tm_mon = MonthNameToNumber(month_name) - 1;  // tm_mon is 0-11
+        
+        return(mktime(&tm));
+    }
+    
+    return(-1);  // parse failed
+}
 
 // Platform API implementation
 void Win32ShowMessage(HWND Window, const char *message)

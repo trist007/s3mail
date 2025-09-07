@@ -1,6 +1,8 @@
 #include "s3mail_platform.h"
 #include "s3mail.h"
 #include <GL/gl.h>
+#include <stdio.h>
+#include <string.h>
 
 // Email Layout format string
 #define EMAIL_FORMAT "%-30.30s | %-69.69s | %-25.25s"
@@ -47,7 +49,7 @@ void RenderButtonRatio(UIButtonRatio* btn, PlatformAPI* platform) {
     DrawRectOutline(btn->x, btn->y, btn->width, btn->height);
     
     SetColor(1.0f, 1.0f, 1.0f);
-    DrawText(platform->GameState, btn->text, btn->x + 5, btn->y + 8);
+    DrawTextGame(platform->GameState, btn->text, btn->x + 5, btn->y + 8);
 }
 
 void RenderButton(UIButton* btn, PlatformAPI* platform) {
@@ -65,7 +67,7 @@ void RenderButton(UIButton* btn, PlatformAPI* platform) {
     DrawRectOutline(btn->x, btn->y, btn->width, btn->height);
     
     SetColor(1.0f, 1.0f, 1.0f);
-    DrawText(platform->GameState, btn->text, btn->x + 5, btn->y + 8);
+    DrawTextGame(platform->GameState, btn->text, btn->x + 5, btn->y + 8);
 }
 
 void UpdateListRatio(UIListRatio* list, int mouse_x, int mouse_y, int mouse_down, int window_height, PlatformAPI* platform) {
@@ -136,7 +138,7 @@ void RenderListRatio(UIListRatio* list, PlatformAPI* platform) {
         }
         
         SetColor(0.0f, 0.0f, 0.0f);
-        DrawText(platform->GameState, list->items[i], list->x + 5, item_y + 5);
+        DrawTextGame(platform->GameState, list->items[i], list->x + 5, item_y + 5);
     }
 }
 
@@ -163,7 +165,7 @@ void RenderList(UIList* list, PlatformAPI* platform) {
         }
         
         SetColor(0.0f, 0.0f, 0.0f);
-        DrawText(platform->GameState, list->items[i], list->x + 5, item_y + 5);
+        DrawTextGame(platform->GameState, list->items[i], list->x + 5, item_y + 5);
     }
 }
 
@@ -186,14 +188,14 @@ void RenderListWithHeader(UIListRatio* list, PlatformAPI* platform) {
     int item_height = 25;
     
     char header_text[256];
-    StringCchPrintf(header_text, sizeof(header_text),
-                    EMAIL_FORMAT, "From", "Subject", "Received");
+    snprintf(header_text, sizeof(header_text),
+             EMAIL_FORMAT, "From", "Subject", "Received");
     
     float header_y = (list->y + list->height) - item_height;  // Top row
     SetColor(0.7f, 0.7f, 0.7f);  // Different color for header
     DrawRect(list->x, header_y, list->width, item_height);
     SetColor(0.0f, 0.0f, 0.0f);
-    DrawText(platform->GameState, header_text, list->x + 5, header_y + 5);
+    DrawTextGame(platform->GameState, header_text, list->x + 5, header_y + 5);
     
     for (int i = 0; i < list->item_count; i++) {
         
@@ -207,7 +209,7 @@ void RenderListWithHeader(UIListRatio* list, PlatformAPI* platform) {
         }
         
         SetColor(0.0f, 0.0f, 0.0f);
-        DrawText(platform->GameState, list->items[i], list->x + 5, item_y + 5);
+        DrawTextGame(platform->GameState, list->items[i], list->x + 5, item_y + 5);
     }
 }
 
@@ -229,14 +231,14 @@ void RenderEmailContent(EmailContent* email, PlatformAPI* platform) {
     if(platform->GameState->email_content[0] == '\0')
     {
         SetColor(1.0f, 0.0f, 0.0f); // Red text for debug
-        DrawTextEmail(platform->GameState, "EMAIL CONTENT IS EMPTY!", 
-                      (0.1146f*WINDOW_WIDTH_HD), (0.1f*WINDOW_HEIGHT_HD));
+        DrawTextGameEmail(platform->GameState, "EMAIL CONTENT IS EMPTY!", 
+                          (0.1146f*WINDOW_WIDTH_HD), (0.1f*WINDOW_HEIGHT_HD));
     }
     else
     {
         // Draw email content within the content area
         SetColor(0.0f, 0.0f, 0.0f);
-        DrawTextEmail(platform->GameState, platform->GameState->email_content, (0.1146f*WINDOW_WIDTH_HD), (0.0092f*WINDOW_HEIGHT_HD));
+        DrawTextGameEmail(platform->GameState, platform->GameState->email_content, (0.1146f*WINDOW_WIDTH_HD), (0.0092f*WINDOW_HEIGHT_HD));
     }
 }
 
@@ -254,8 +256,10 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->compose_button.y_ratio = 0.7731f;
         GameState->compose_button.width_ratio = 0.0521f;
         GameState->compose_button.height_ratio = 0.02778;
-        StringCchCopy(GameState->compose_button.text,
-                      ArrayCount(GameState->compose_button.text), "Compose");
+        strncpy(GameState->compose_button.text,
+                "Compose", ArrayCount(GameState->compose_button.text));
+        
+        
         GameState->compose_button.is_hovered = 0;
         GameState->compose_button.is_pressed = 0;
         
@@ -263,8 +267,8 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->delete_button.y_ratio = 0.7731f;
         GameState->delete_button.width_ratio = 0.0469f;
         GameState->delete_button.height_ratio = 0.0278f;
-        StringCchCopy(GameState->delete_button.text,
-                      ArrayCount(GameState->delete_button.text), "Delete");
+        strncpy(GameState->delete_button.text,
+                "Delete", ArrayCount(GameState->delete_button.text));
         GameState->delete_button.is_hovered = 0;
         GameState->delete_button.is_pressed = 0;
         
@@ -272,11 +276,11 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->folder_list.y_ratio = 0.6435f;
         GameState->folder_list.width_ratio = 0.1042f;
         GameState->folder_list.height_ratio = 0.1157f;
-        StringCchCopy(GameState->folder_list.items[0], sizeof(GameState->folder_list.items[0]), "Inbox");
-        StringCchCopy(GameState->folder_list.items[1], sizeof(GameState->folder_list.items[1]), "Sent");
-        StringCchCopy(GameState->folder_list.items[2], sizeof(GameState->folder_list.items[2]), "Draft");
-        StringCchCopy(GameState->folder_list.items[3], sizeof(GameState->folder_list.items[3]), "Junk");
-        StringCchCopy(GameState->folder_list.items[4], sizeof(GameState->folder_list.items[4]), "Trash");
+        strncpy(GameState->folder_list.items[0], "Inbox", sizeof(GameState->folder_list.items[0]));
+        strncpy(GameState->folder_list.items[1], "Sent", sizeof(GameState->folder_list.items[1]));
+        strncpy(GameState->folder_list.items[2], "Draft", sizeof(GameState->folder_list.items[2]));
+        strncpy(GameState->folder_list.items[3], "Junk", sizeof(GameState->folder_list.items[3]));
+        strncpy(GameState->folder_list.items[4], "Trash", sizeof(GameState->folder_list.items[4]));
         GameState->folder_list.item_count = 5;
         GameState->folder_list.selected_item = 0;
         
@@ -284,10 +288,10 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->contact_list.y_ratio = 0.5370f;
         GameState->contact_list.width_ratio = 0.1042f;
         GameState->contact_list.height_ratio = 0.0926f;
-        StringCchCopy(GameState->contact_list.items[0], sizeof(GameState->contact_list.items[0]), "Papi");
-        StringCchCopy(GameState->contact_list.items[1], sizeof(GameState->contact_list.items[1]), "Mom");
-        StringCchCopy(GameState->contact_list.items[2], sizeof(GameState->contact_list.items[2]), "Glen");
-        StringCchCopy(GameState->contact_list.items[3], sizeof(GameState->contact_list.items[3]), "Vito");
+        strncpy(GameState->contact_list.items[0], "Papi", sizeof(GameState->contact_list.items[0]));
+        strncpy(GameState->contact_list.items[1], "Mom", sizeof(GameState->contact_list.items[1]));
+        strncpy(GameState->contact_list.items[2], "Glen", sizeof(GameState->contact_list.items[2]));
+        strncpy(GameState->contact_list.items[3], "Vito", sizeof(GameState->contact_list.items[3]));
         GameState->contact_list.item_count = 4;
         GameState->contact_list.selected_item = -1;
         
@@ -306,11 +310,11 @@ GAME_INITIALIZE_UI(GameInitializeUI)
             i < GameState->email_count;
             i++)
         {
-            StringCchPrintf(GameState->email_list.items[i], sizeof(GameState->email_list.items[i]),
-                            EMAIL_FORMAT,
-                            GameState->email_array[i].from,
-                            GameState->email_array[i].subject,
-                            GameState->email_array[i].date);
+            snprintf(GameState->email_list.items[i], sizeof(GameState->email_list.items[i]),
+                     EMAIL_FORMAT,
+                     GameState->email_array[i].from,
+                     GameState->email_array[i].subject,
+                     GameState->email_array[i].date);
         }
         
         GameState->email_list.item_count = GameState->email_count;
@@ -374,7 +378,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     char header_text[256];
     StringCchPrintf(header_text, sizeof(header_text),
                     EMAIL_FORMAT, "From", "Subject", "Received");
-    DrawText(platform->GameState, header_text, 225, 1225);
+    DrawTextGame(platform->GameState, header_text, 225, 1225);
 */
     
     // Email preview
@@ -383,13 +387,13 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
         if(GameState->show_aws_output)
         {
             // show aws output instead of preview
-            DrawText(platform->GameState, GameState->aws_output_buffer, 640, 320);
+            DrawTextGame(platform->GameState, GameState->aws_output_buffer, 640, 320);
         }
         else if (GameState->email_list.selected_item >= 0)
         {
             char preview_text[256];
             sprintf_s(preview_text, sizeof(preview_text), "Preview of %s - Hot Reloaded!", GameState->email_list.items[GameState->email_list.selected_item]);
-            DrawText(platform->GameState, preview_text, 640, 120);
+            DrawTextGame(platform->GameState, preview_text, 640, 120);
         }
     }
     
@@ -397,7 +401,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     SetColor(0.8f, 0.8f, 0.8f);
     DrawRect(0, 0, GameState->window_width, 25);
     SetColor(0.0f, 0.0f, 0.0f);
-    DrawText(platform->GameState, "S3Mail - Hot Reloadable Ready!", 10, 8);
+    DrawTextGame(platform->GameState, "S3Mail - Hot Reloadable Ready!", 10, 8);
     
     // Handle button clicks
     if (GameState->compose_button.is_pressed) {
@@ -499,7 +503,6 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     char* output_text = platform->ReadProcessOutput(GameState->awscli.stdout_read);
                     if(output_text)
                     {
-                        //DrawText(platform->GameState, output_text, 640, 320);
                         strncpy(GameState->aws_output_buffer, output_text, sizeof(GameState->aws_output_buffer) - 1);
                         GameState->aws_output_buffer[sizeof(GameState->aws_output_buffer) - 1] = '\0';
                         GameState->show_aws_output = true;
