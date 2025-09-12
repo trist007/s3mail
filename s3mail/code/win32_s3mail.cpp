@@ -272,6 +272,24 @@ Win32GetCurrentWorkingDirectory(char *dir)
     return(result);
 }
 
+void
+Win32ParseEmail(char *email_content, char parsed_email[][256], int *line_count)
+{
+    int lines = 0;
+    
+    char *line = strtok((char *)email_content, "\n");
+    
+    while(line != NULL && lines < 1000)
+    {
+        strncpy(parsed_email[lines], line, 255);
+        parsed_email[lines][255] = '\0';
+        lines++;
+        line = strtok(NULL, "\n");
+    }
+    
+    *line_count = lines;
+}
+
 internal int
 Win32ListFilesInDirectory(char *directory, EmailMetadata **email_array)
 {
@@ -731,6 +749,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.ReadProcessOutput = Win32ReadProcessOutput;
     win32.ListFilesInDirectory = Win32ListFilesInDirectory;
     win32.GetCurrentWorkingDirectory = Win32GetCurrentWorkingDirectory;
+    win32.ParseEmail = Win32ParseEmail;
     win32.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
     win32.DEBUGPlatformReadEntireFile = DEBUGPlatformReadEntireFile;
     win32.DEBUGPlatformWriteEntireFile = DEBUGPlatformWriteEntireFile;

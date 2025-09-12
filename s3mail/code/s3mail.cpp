@@ -315,7 +315,7 @@ DecodeSubjectIfNeeded(char *subject)
                      decoded,                   // Decoded text
                      encoded_end + 2);          // Everything after "?="
             
-            StringCchCopy(subject, 256, result);
+            strncpy(subject, result, 256);
         }
     }
 }

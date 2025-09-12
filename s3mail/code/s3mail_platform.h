@@ -96,6 +96,7 @@ typedef struct {
     char items[MAX_EMAILS][256];
     int item_count;
     int selected_item;
+    int scroll_offset;
 } EmailContent;
 
 typedef struct {
@@ -167,6 +168,8 @@ typedef struct {
     EmailMetadata *email_array;
     int32 email_count;
     char email_content[4096];
+    char parsed_email[1000][256];
+    int32 line_count;
     
     // Memory
     void *permanent_storage;
@@ -217,6 +220,7 @@ typedef struct {
     debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
     int (*ListFilesInDirectory)(char *directory, EmailMetadata **email_array);
     DWORD (*GetCurrentWorkingDirectory)(char *dir);
+    void (*ParseEmail)(char *email_content, char parsed_email[][256], int *line_count);
     
     // Game state
     game_state *GameState;

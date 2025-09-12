@@ -107,6 +107,14 @@ void UpdateEmailContent(EmailContent* email, int mouse_x, int mouse_y, int mouse
     email->width = WINDOW_WIDTH_HD * email->width_ratio;
     email->height = WINDOW_HEIGHT_HD * email->height_ratio;
     
+    if (mouse_down &&  PointInRect(mouse_x, gl_y, email->x, email->y, email->width, email->height)) {
+        int item_height = 25;
+        int clicked_item = (gl_y - email->y) / item_height;
+        if (clicked_item >= 0 && clicked_item < email->item_count) {
+            email->selected_item = clicked_item + email->scroll_offset;
+        }
+    }
+    
 }
 
 void RenderListRatio(UIListRatio* list, PlatformAPI* platform) {
@@ -238,7 +246,24 @@ void RenderEmailContent(EmailContent* email, PlatformAPI* platform) {
     {
         // Draw email content within the content area
         SetColor(0.0f, 0.0f, 0.0f);
-        DrawTextGameEmail(platform->GameState, platform->GameState->email_content, (0.1146f*WINDOW_WIDTH_HD), (0.0092f*WINDOW_HEIGHT_HD));
+        int lines_to_show = 30;
+        int start_line = email->scroll_offset;
+        int end_line = min(start_line + lines_to_show, email->item_count);
+        
+        for(int i = start_line; i < end_line; i++) {
+            float line_y = email->y + (email->height - ((i - start_line + 1) * 25));
+            DrawTextGameEmail(platform->GameState, 
+                              platform->GameState->parsed_email[i], 
+                              email->x + 5, 
+                              line_y);
+        }
+        /*
+        DrawTextGameEmail(platform->GameState,
+                          platform->GameState->parsed_email[platform->GameState->email.selected_item],
+                          (0.1146f*WINDOW_WIDTH_HD),
+                          (0.0092f*WINDOW_HEIGHT_HD));
+    }
+*/
     }
 }
 
@@ -304,6 +329,7 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->email.y_ratio= 0.039f;
         GameState->email.width_ratio = 0.87f;
         GameState->email.height_ratio = 0.721f;
+        GameState->email.scroll_offset = 0;
         
         // NOTE(trist007): testing Email headers display
         for(int i = 0;
@@ -528,6 +554,9 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     memmove(GameState->email_content, Result.Contents, copy_size);
                     GameState->email_content[copy_size] = '\0';
                     platform->DEBUGPlatformFreeFileMemory(&Thread, Result.Contents);
+                    platform->ParseEmail(GameState->email_content, GameState->parsed_email, &GameState->line_count);
+                    GameState->email.selected_item = 0;
+                    GameState->email.item_count = GameState->line_count;
                     
                 } break;
                 
@@ -555,10 +584,44 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
         {
             switch (key_code)
             {
-                // scroll down by a page
+                // scroll down one line
+                case 'J':
+                {
+                    if(GameState->email.scroll_offset < GameState->email.item_count - 1)
+                    {
+                        GameState->email.scroll_offset++;
+                    }
+                } break;
+                
+                // scroll up one line
+                case 'K':
+                {
+                    if(GameState->email.scroll_offset > 0)
+                    {
+                        GameState->email.scroll_offset--;
+                    }
+                } break;
+                
+                // scroll down a page
                 case VK_SPACE:
                 {
-                    // code for scrolling down by a page
+                    int lines_per_page = 30;
+                    GameState->email.scroll_offset += lines_per_page;
+                    if(GameState->email.scroll_offset >= GameState->email.item_count)
+                    {
+                        GameState->email.scroll_offset = GameState->email.item_count - 1;
+                    }
+                } break;
+                
+                // scroll up a page
+                case '-':
+                {
+                    int lines_per_page = 30;
+                    GameState->email.scroll_offset -= lines_per_page;
+                    if(GameState->email.scroll_offset < 0)
+                    {
+                        GameState->email.scroll_offset = 0;
+                    }
                 } break;
                 
                 // delete email
