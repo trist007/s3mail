@@ -691,6 +691,39 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 {
     win32_state Win32State = {};
     
+#if S3MAIL_INTERNAL
+    LPVOID BaseAddress = (LPVOID)Terabytes(2); // Same memory addresses for easier debugging
+#else
+    LPVOID BaseAddress = 0; // let's Windows choose the optimal memory location
+#endif
+    
+    game_memory GameMemory = {};
+    GameMemory.PermanentStorageSize = Megabytes(64); // Memory for entire program lifetime
+    GameMemory.TransientStorageSize = Gigabytes(1); // Memory for short-term scratchpad
+    GameMemory.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
+    GameMemory.DEBUGPlatformReadEntireFile = DEBUGPlatformReadEntireFile;
+    GameMemory.DEBUGPlatformWriteEntireFile = DEBUGPlatformWriteEntireFile;
+    
+    
+    // TODO(casey): Handle various memory footprints (USING
+    // SYSTEM METRICS)
+    
+    // TODO(casey): Use MEM_LARGE_PAGES and
+    // call adjust token privileges when not on Windows XP?
+    
+    // TODO(casey): TransientStorage needs to be broken up
+    // into game transient and cache transient, and only the
+    // former need be saved for state playback.
+    Win32State.TotalSize = GameMemory.PermanentStorageSize + GameMemory.TransientStorageSize;
+    Win32State.GameMemoryBlock = VirtualAlloc(BaseAddress, (size_t)Win32State.TotalSize,
+                                              MEM_RESERVE|MEM_COMMIT,
+                                              PAGE_READWRITE);
+    GameMemory.PermanentStorage = Win32State.GameMemoryBlock;
+    GameMemory.TransientStorage = ((uint8 *)GameMemory.PermanentStorage +
+                                   GameMemory.PermanentStorageSize);
+    
+    
+    
     Win32GetEXEFileName(&Win32State);
     
     char SourceGameCodeDLLFullPath[WIN32_STATE_FILE_NAME_COUNT];
@@ -713,6 +746,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     
     // Initialize game_state
     game_state GameState = {};
+    //game_state *GameState = (game_state *)Memory->PermanentStorage;
     
     // Register and create window
     WNDCLASS wc = {};

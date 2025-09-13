@@ -172,13 +172,41 @@ typedef struct {
     int32 line_count;
     
     // Memory
+    uint64 TotalSize;
+    void *GameMemoryBlock;
+    
     void *permanent_storage;
     uint64 permanent_storage_size;
 } game_state;
 
+typedef struct game_memory
+{
+    bool32 IsInitialized;
+    
+    uint64 PermanentStorageSize;
+    void *PermanentStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
+    
+    uint64 TransientStorageSize;
+    void *TransientStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
+    
+    debug_platform_free_file_memory *DEBUGPlatformFreeFileMemory;
+    debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
+    debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
+} game_memory;
+
 #define WIN32_STATE_FILE_NAME_COUNT MAX_PATH
 typedef struct win32_state
 {
+    uint64 TotalSize;
+    void *GameMemoryBlock;
+    win32_replay_buffer ReplayBuffers[4];
+    
+    HANDLE RecordingHandle;
+    int InputRecordingIndex;
+    
+    HANDLE PlaybackHandle;
+    int InputPlayingIndex;
+    
     char EXEFileName[WIN32_STATE_FILE_NAME_COUNT];
     char *OnePastLastEXEFileNameSlash;
 } win32_state;
