@@ -248,7 +248,6 @@ typedef struct {
     debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
     int (*ListFilesInDirectory)(char *directory, EmailMetadata **email_array);
     DWORD (*GetCurrentWorkingDirectory)(char *dir);
-    void (*ParseEmail)(char *email_content, char parsed_email[][256], int *line_count);
     
     // Game state
     game_state *GameState;

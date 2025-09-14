@@ -320,6 +320,31 @@ DecodeSubjectIfNeeded(char *subject)
     }
 }
 
+time_t
+ParseEmailDate(char *date_header)
+{
+    struct tm tm = {0};
+    char day_name[10], month_name[10];
+    int day, year, hour, min, sec;
+    
+    if(sscanf(date_header, "%s %d %s %d %d:%d:%d",
+              day_name, &day, month_name, &year, &hour, &min, &sec) == 7)
+    {
+        tm.tm_mday = day;
+        tm.tm_year = year - 1900; // tm_year is years since 1900
+        tm.tm_hour = hour;
+        tm.tm_min = min;
+        tm.tm_sec = sec;
+        
+        // Convert month name to number
+        tm.tm_mon = MonthNameToNumber(month_name) - 1;  // tm_mon is 0-11
+        
+        return(mktime(&tm));
+    }
+    
+    return(-1);  // parse failed
+}
+
 void
 GetDate(char *date, size_t buffer_size)
 {
@@ -405,4 +430,162 @@ CompareByTimestamp(const void *a, const void *b)
     if(email1->parsed_time < email2->parsed_time) return 1;
     
     return(0);
+}
+
+void
+ParseEmail(char *email_content, char parsed_email[][256], int *line_count)
+{
+    int lines = 0;
+    
+    char *line = strtok((char *)email_content, "\n");
+    
+    while(line != NULL && lines < 1000)
+    {
+        strncpy(parsed_email[lines], line, 255);
+        parsed_email[lines][255] = '\0';
+        lines++;
+        line = strtok(NULL, "\n");
+    }
+    
+    *line_count = lines;
+}
+
+void
+ExtractHeader(thread_context *Thread, char *date, EmailMetadata *email_array, int32 email_count,
+              debug_platform_read_entire_file *ReadEntireFile, char *path, HeaderType header_type)
+{
+    
+    char *header_name;
+    int32 header_len;
+    
+    // Set up header string and length
+    switch(header_type)
+    {
+        case HEADER_FROM:
+        {
+            header_name = "From:";
+            header_len = 5;
+            break;
+        }
+        case HEADER_SUBJECT:
+        {
+            header_name = "Subject:";
+            header_len = 8;
+            break;
+        }
+        case HEADER_DATE:
+        {
+            header_name = "Date:";
+            header_len = 5;
+            break;
+        }
+        default: // add this to handle unexpected values
+        {
+            header_name = "Unknown";
+            header_len = 8;
+            
+            // don't know what to search for
+            return; 
+        }
+    }
+    
+    for(int count = 0;
+        count < email_count;
+        count++)
+    {
+        char *Match = "Unknown";
+        char full_path_to_file[128];
+        
+        StringCchPrintf(full_path_to_file, sizeof(full_path_to_file), "%s/%s", path, email_array[count].filename);
+        
+        debug_read_file_result ReadResult = ReadEntireFile(Thread, full_path_to_file);    
+        if(ReadResult.ContentsSize != 0)
+        {
+            char *line = strtok((char *)ReadResult.Contents, "\n");
+            while(line != NULL)
+            {
+                if(strncmp(line, header_name, header_len) == 0)
+                {
+                    Match = line + header_len;
+                    
+                    // Skip any leading whitespace
+                    while(*Match == ' ' || *Match == '\t')
+                    {
+                        Match++;
+                    }
+                    
+                    // break out of the while loop
+                    break;
+                }
+                
+                // move to the next line if current line wasn't a match
+                line = strtok(NULL, "\n");
+            }
+        }
+        
+        switch(header_type)
+        {
+            case HEADER_FROM:
+            {
+                // Check if this is in the "Name <email>" format
+                char *AngleBracketStart = strchr(Match, '<');
+                if(AngleBracketStart != NULL)
+                {
+                    // Copy everything before the '<'
+                    int name_len = AngleBracketStart - Match;
+                    
+                    // Remove trailing whitespace from the name
+                    while((name_len > 0) && ((Match[name_len - 1] == ' ') || (Match[name_len - 1] == '\t') || (Match[name_len - 1] == '\r')))
+                    {
+                        name_len--;
+                    }
+                    
+                    snprintf(email_array[count].from, sizeof(email_array[count].from), "%.*s", name_len, Match);
+                }
+                else
+                {
+                    // No angle brackets found, use the whole string
+                    snprintf(email_array[count].from, sizeof(email_array[count].from), "%s", Match);
+                }
+                
+                break;
+            }
+            case HEADER_SUBJECT:
+            {
+                char *CarriageReturn = strchr(Match, '\r');
+                int len = 0;
+                size_t name_len = strlen(Match);
+                if(CarriageReturn != NULL)
+                {
+                    name_len = CarriageReturn - Match;
+                    
+                    // Remove trailing whitespace from the name
+                    while((name_len > 0) && ((Match[name_len - 1] == ' ') || (Match[name_len - 1] == '\t') || (Match[name_len - 1] == '\r')))
+                    {
+                        name_len--;
+                    }
+                    
+                    if(name_len <= INT_MAX)
+                    {
+                        len = (int)name_len;
+                    }
+                    
+                    snprintf(email_array[count].subject, sizeof(email_array[count].subject), "%.*s", len, Match);
+                }
+                else
+                {
+                    snprintf(email_array[count].subject, sizeof(email_array[count].subject), "%s", Match);
+                }
+                
+                DecodeSubjectIfNeeded(email_array[count].subject);
+                break;
+            }
+            case HEADER_DATE:
+            {
+                snprintf(email_array[count].date, sizeof(email_array[count].date), "%s", Match);
+                email_array[count].parsed_time = ParseEmailDate(Match);
+                break;
+            }
+        }
+    }
 }

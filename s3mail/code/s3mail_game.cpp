@@ -554,7 +554,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     memmove(GameState->email_content, Result.Contents, copy_size);
                     GameState->email_content[copy_size] = '\0';
                     platform->DEBUGPlatformFreeFileMemory(&Thread, Result.Contents);
-                    platform->ParseEmail(GameState->email_content, GameState->parsed_email, &GameState->line_count);
+                    ParseEmail(GameState->email_content, GameState->parsed_email, &GameState->line_count);
                     GameState->email.selected_item = 0;
                     GameState->email.item_count = GameState->line_count;
                     
