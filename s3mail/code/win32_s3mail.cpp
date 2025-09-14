@@ -700,9 +700,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     game_memory GameMemory = {};
     GameMemory.PermanentStorageSize = Megabytes(64); // Memory for entire program lifetime
     GameMemory.TransientStorageSize = Gigabytes(1); // Memory for short-term scratchpad
+    /*
     GameMemory.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
     GameMemory.DEBUGPlatformReadEntireFile = DEBUGPlatformReadEntireFile;
     GameMemory.DEBUGPlatformWriteEntireFile = DEBUGPlatformWriteEntireFile;
+*/
     
     
     // TODO(casey): Handle various memory footprints (USING
@@ -824,8 +826,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     
     if (gamecode.is_valid)
     {
-        gamecode.InitializeUI(&GameState, &win32);
-    }
+        gamecode.InitializeUI(&Thread, &GameMemory, &GameState, &win32);
+    } 
     
     
     char PathToFont[256];
@@ -886,7 +888,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                 // Add some debugging to see what's happening
                 if (gamecode.is_valid) {
                     if (gamecode.InitializeUI) {
-                        gamecode.InitializeUI(&GameState, &win32);
+                        gamecode.InitializeUI(&Thread, &GameMemory, &GameState, &win32);
                         // Maybe add a debug message here to confirm it ran
                         OutputDebugString("Successfully reinitialized UI after DLL reload\n");
                     } else {
@@ -902,7 +904,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
             if (gamecode.is_valid)
             {
                 glClear(GL_COLOR_BUFFER_BIT);
-                gamecode.UpdateAndRender(&GameState, &win32);
+                gamecode.UpdateAndRender(&Thread, &GameMemory, &GameState, &win32);
                 SwapBuffers(g_hdc);
             }
             

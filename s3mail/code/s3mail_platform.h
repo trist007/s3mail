@@ -189,9 +189,9 @@ typedef struct game_memory
     uint64 TransientStorageSize;
     void *TransientStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
     
-    debug_platform_free_file_memory *DEBUGPlatformFreeFileMemory;
-    debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
-    debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
+    //debug_platform_free_file_memory *DEBUGPlatformFreeFileMemory;
+    //debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
+    //debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
 } game_memory;
 
 #define WIN32_STATE_FILE_NAME_COUNT MAX_PATH
@@ -199,7 +199,7 @@ typedef struct win32_state
 {
     uint64 TotalSize;
     void *GameMemoryBlock;
-    win32_replay_buffer ReplayBuffers[4];
+    //win32_replay_buffer ReplayBuffers[4];
     
     HANDLE RecordingHandle;
     int InputRecordingIndex;
@@ -256,20 +256,22 @@ typedef struct {
 } PlatformAPI;
 
 // DLL interface - functions the DLL must export
+/*
 typedef struct {
     void (*UpdateAndRender)(game_state *GameState, PlatformAPI *platform);
     void (*HandleKeyPress)(game_state *GameState, int key_code);
     void (*InitializeUI)(game_state *GameState);
 } GameAPI;
+*/
 
 // DLL export signature
-#define GAME_UPDATE_AND_RENDER(name) void name(game_state *GameState, PlatformAPI* platform)
+#define GAME_UPDATE_AND_RENDER(name) void name(thread_context *Thread, game_memory *Memory, game_state *GameState, PlatformAPI* platform)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 
 #define GAME_HANDLE_KEY_PRESS(name) void name(game_state *GameState, int key_code, PlatformAPI* platform)
 typedef GAME_HANDLE_KEY_PRESS(game_handle_key_press);
 
-#define GAME_INITIALIZE_UI(name) void name(game_state *GameState, PlatformAPI* platform)
+#define GAME_INITIALIZE_UI(name) void name(thread_context *Thread, game_memory *Memory, game_state *GameState, PlatformAPI* platform)
 typedef GAME_INITIALIZE_UI(game_initialize_ui);
 
 // DLL hot reloading
