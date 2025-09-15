@@ -289,4 +289,24 @@ typedef struct game_button_state
     bool32 EndedDown;
 } game_button_state;
 
+// mac stuff
+typedef struct {
+    void *dylib;
+    time_t last_write_time;
+    
+    game_update_and_render *UpdateAndRender;
+    game_handle_key_press *HandleKeyPress;
+    game_initialize_ui *InitializeUI;
+    
+    bool32 is_valid;
+} MacGameCode;
+
+typedef struct {
+    char EXEFileName[4096];
+    char *OnePastLastEXEFileNameSlash;
+} mac_state;
+
+#define MAC_STATE_FILE_NAME_COUNT 4096
+#define PATH_MAX 1024
+
 #endif //S3MAIL_PLATFORM_H
