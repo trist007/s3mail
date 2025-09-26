@@ -7,8 +7,6 @@
 // Email Layout format string
 #define EMAIL_FORMAT "%-30.30s | %-69.69s | %-25.25s"
 
-internal bool32 reinit_ui = true;
-
 // UI update functions
 void UpdateButtonRatio(UIButtonRatio* btn, int mouse_x, int mouse_y, int mouse_down, int window_height, PlatformAPI* platform) {
     
@@ -545,7 +543,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     
                     snprintf(PathToFile, MAX_PATH, "C:/Users/Tristan/.email/%s", filename);
                     
-                    debug_read_file_result Result = platform->DEBUGPlatformReadEntireFile(&Thread, PathToFile);
+                    debug_read_file_result Result = platform->DEBUGPlatformReadEntireFile(&Thread, PathToFile, Memory);
                     
                     size_t copy_size = (Result.ContentsSize) <
                     (sizeof(GameState->email_content) - 1) ?

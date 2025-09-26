@@ -60,7 +60,7 @@ time_t ParseEmailDate(char *date_header);
 inline uint32
 SafeTruncateUInt64(uint64 Value)
 {
-    // TODO(casey): Defines for maximum values
+    // TODO(trist007): Defines for maximum values
     Assert(Value <= 0xFFFFFFFF);
     uint32 Result = (uint32)Value;
     return(Result);
@@ -184,10 +184,10 @@ typedef struct game_memory
     bool32 IsInitialized;
     
     uint64 PermanentStorageSize;
-    void *PermanentStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
+    void *PermanentStorage;
     
     uint64 TransientStorageSize;
-    void *TransientStorage; // NOTE(casey): REQUIRED to be cleared to zero at startup
+    void *TransientStorage;
     
     //debug_platform_free_file_memory *DEBUGPlatformFreeFileMemory;
     //debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
@@ -226,7 +226,7 @@ typedef struct debug_read_file_result
 #define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(thread_context *Thread, void *Memory)
 typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
 
-#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) debug_read_file_result name(thread_context *Thread, char *Filename)
+#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) debug_read_file_result name(thread_context *Thread, char *Filename, game_memory *Memory)
 typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
 
 #define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(thread_context *Thread, char *Filename, uint32 MemorySize, void *Memory)
@@ -267,7 +267,7 @@ typedef struct {
 #define GAME_UPDATE_AND_RENDER(name) void name(thread_context *Thread, game_memory *Memory, game_state *GameState, PlatformAPI* platform)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render);
 
-#define GAME_HANDLE_KEY_PRESS(name) void name(game_state *GameState, int key_code, PlatformAPI* platform)
+#define GAME_HANDLE_KEY_PRESS(name) void name(game_state *GameState, int key_code, PlatformAPI* platform, game_memory *Memory)
 typedef GAME_HANDLE_KEY_PRESS(game_handle_key_press);
 
 #define GAME_INITIALIZE_UI(name) void name(thread_context *Thread, game_memory *Memory, game_state *GameState, PlatformAPI* platform)

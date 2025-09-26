@@ -238,7 +238,7 @@ CatStrings(size_t SourceACount, char *SourceA,
            size_t SourceBCount, char *SourceB,
            size_t DestCount, char *Dest)
 {
-    // TODO(casey): Dest bounds checking!
+    // TODO(trist007): Dest bounds checking!
     
     for(int Index = 0;
         Index < SourceACount;
@@ -452,7 +452,7 @@ ParseEmail(char *email_content, char parsed_email[][256], int *line_count)
 
 void
 ExtractHeader(thread_context *Thread, char *date, EmailMetadata *email_array, int32 email_count,
-              debug_platform_read_entire_file *ReadEntireFile, char *path, HeaderType header_type)
+              debug_platform_read_entire_file *ReadEntireFile, char *path, HeaderType header_type, game_memory *Memory)
 {
     
     char *header_name;
@@ -498,7 +498,7 @@ ExtractHeader(thread_context *Thread, char *date, EmailMetadata *email_array, in
         
         StringCchPrintf(full_path_to_file, sizeof(full_path_to_file), "%s/%s", path, email_array[count].filename);
         
-        debug_read_file_result ReadResult = ReadEntireFile(Thread, full_path_to_file);    
+        debug_read_file_result ReadResult = ReadEntireFile(Thread, full_path_to_file, Memory);
         if(ReadResult.ContentsSize != 0)
         {
             char *line = strtok((char *)ReadResult.Contents, "\n");

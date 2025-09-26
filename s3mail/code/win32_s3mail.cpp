@@ -205,7 +205,7 @@ int Win32InitOpenGL(HWND hwnd)
 internal void
 Win32GetEXEFileName(win32_state *GameState)
 {
-    // NOTE(casey): Never use MAX_PATH in code that is user-facing, because it
+    // NOTE(trist007): Never use MAX_PATH in code that is user-facing, because it
     // can be dangerous and lead to bad results.
     DWORD SizeOfFilename = GetModuleFileNameA(0, GameState->EXEFileName, sizeof(GameState->EXEFileName));
     GameState->OnePastLastEXEFileNameSlash = GameState->EXEFileName;
@@ -301,38 +301,47 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile)
         if(GetFileSizeEx(FileHandle, &FileSize))
         {
             uint32 FileSize32 = SafeTruncateUInt64(FileSize.QuadPart);
-            Result.Contents = VirtualAlloc(0, FileSize32, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+            //Result.Contents = VirtualAlloc(0, FileSize32, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+            
+            uint8 *TransientPtr = 0;
+            if(!TransientPtr)
+            {
+                TransientPtr = (uint8 *)Memory->TransientStorage;
+            }
+            
+            Result.Contents = TransientPtr;
+            
             if(Result.Contents)
             {
                 DWORD BytesRead;
                 if(ReadFile(FileHandle, Result.Contents, FileSize32, &BytesRead, 0) &&
                    (FileSize32 == BytesRead))
                 {
-                    // NOTE(casey): File read successfully
+                    // NOTE(trist007): File read successfully
                     Result.ContentsSize = FileSize32;
                 }
                 else
                 {                    
-                    // TODO(casey): Logging
+                    // TODO(trist007): Logging
                     DEBUGPlatformFreeFileMemory(Thread, Result.Contents);
                     Result.Contents = 0;
                 }
             }
             else
             {
-                // TODO(casey): Logging
+                // TODO(trist007): Logging
             }
         }
         else
         {
-            // TODO(casey): Logging
+            // TODO(trist007): Logging
         }
         
         CloseHandle(FileHandle);
     }
     else
     {
-        // TODO(casey): Logging
+        // TODO(trist007): Logging
     }
     
     return(Result);
@@ -348,26 +357,26 @@ DEBUG_PLATFORM_WRITE_ENTIRE_FILE(DEBUGPlatformWriteEntireFile)
         DWORD BytesWritten;
         if(WriteFile(FileHandle, Memory, MemorySize, &BytesWritten, 0))
         {
-            // NOTE(casey): File read successfully
+            // NOTE(trist007): File read successfully
             Result = (BytesWritten == MemorySize);
         }
         else
         {
-            // TODO(casey): Logging
+            // TODO(trist007): Logging
         }
         
         CloseHandle(FileHandle);
     }
     else
     {
-        // TODO(casey): Logging
+        // TODO(trist007): Logging
     }
     
     return(Result);
 }
 
 internal void
-Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, PlatformAPI *platform)
+Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, PlatformAPI *platform, game_memory *Memory)
 {
     MSG Message;
     while(PeekMessage(&Message, 0, 0, 0, PM_REMOVE))
@@ -386,7 +395,7 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, Plat
             {
                 uint32 VKCode = (uint32)Message.wParam;
                 
-                // NOTE(casey): Since we are comparing WasDown to IsDown,
+                // NOTE(trist007): Since we are comparing WasDown to IsDown,
                 // we MUST use == and != to convert these bit tests to actual
                 // 0 or 1 values.
                 bool32 WasDown = ((Message.lParam & (1 << 30)) != 0);
@@ -396,7 +405,7 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, Plat
                 {
                     if(gamecode->is_valid && IsDown && gamecode->HandleKeyPress)
                     {
-                        gamecode->HandleKeyPress(GameState, VKCode, platform);
+                        gamecode->HandleKeyPress(GameState, VKCode, platform, Memory);
                     }
                     
                     if(VKCode == VK_ESCAPE)
@@ -523,13 +532,13 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
 */
     
     
-    // TODO(casey): Handle various memory footprints (USING
+    // TODO(trist007): Handle various memory footprints (USING
     // SYSTEM METRICS)
     
-    // TODO(casey): Use MEM_LARGE_PAGES and
+    // TODO(trist007): Use MEM_LARGE_PAGES and
     // call adjust token privileges when not on Windows XP?
     
-    // TODO(casey): TransientStorage needs to be broken up
+    // TODO(trist007): TransientStorage needs to be broken up
     // into game transient and cache transient, and only the
     // former need be saved for state playback.
     Win32State.TotalSize = GameMemory.PermanentStorageSize + GameMemory.TransientStorageSize;
@@ -563,8 +572,8 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                                                GameCodeLockFullPath);
     
     // Initialize game_state
-    game_state GameState = {};
-    //game_state *GameState = (game_state *)Memory->PermanentStorage;
+    //game_state GameState = {};
+    game_state *GameState = (game_state *)GameMemory.PermanentStorage;
     
     // Register and create window
     WNDCLASS wc = {};
@@ -604,44 +613,44 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
     win32.DEBUGPlatformReadEntireFile = DEBUGPlatformReadEntireFile;
     win32.DEBUGPlatformWriteEntireFile = DEBUGPlatformWriteEntireFile;
-    win32.GameState = &GameState;
+    win32.GameState = GameState;
     win32.Window = Window;
     
     thread_context Thread = {};
     
-    GameState.email_array = 0;
-    GameState.email_count = Win32ListFilesInDirectory("C:/Users/Tristan/.email", &GameState.email_array);
+    GameState->email_array = 0;
+    GameState->email_count = Win32ListFilesInDirectory("C:/Users/Tristan/.email", &GameState->email_array);
     
     // get time now
     char date[32];
     GetDate(date, sizeof(date));
     
     // Extract email Headers
-    ExtractHeader(&Thread, date, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
-                  "C:/Users/Tristan/.email", HEADER_FROM);
-    ExtractHeader(&Thread, date, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
-                  "C:/Users/Tristan/.email", HEADER_SUBJECT);
-    ExtractHeader(&Thread, date, GameState.email_array, GameState.email_count, win32.DEBUGPlatformReadEntireFile,
-                  "C:/Users/Tristan/.email", HEADER_DATE);
+    ExtractHeader(&Thread, date, GameState->email_array, GameState->email_count, win32.DEBUGPlatformReadEntireFile,
+                  "C:/Users/Tristan/.email", HEADER_FROM, &GameMemory);
+    ExtractHeader(&Thread, date, GameState->email_array, GameState->email_count, win32.DEBUGPlatformReadEntireFile,
+                  "C:/Users/Tristan/.email", HEADER_SUBJECT, &GameMemory);
+    ExtractHeader(&Thread, date, GameState->email_array, GameState->email_count, win32.DEBUGPlatformReadEntireFile,
+                  "C:/Users/Tristan/.email", HEADER_DATE, &GameMemory);
     
     // sort emails by Date Header
-    qsort(GameState.email_array, GameState.email_count, sizeof(EmailMetadata), CompareByTimestamp);
+    qsort(GameState->email_array, GameState->email_count, sizeof(EmailMetadata), CompareByTimestamp);
     
     // if email was received today just show time instead of whole date
     for(int i = 0;
-        i < GameState.email_count;
+        i < GameState->email_count;
         i++)
     {
-        if(CheckIfEmailReceivedToday(date, GameState.email_array[i].date))
+        if(CheckIfEmailReceivedToday(date, GameState->email_array[i].date))
         {
             // Change to just show time implying it was received today
-            ChangeDateHeaderIfToday(GameState.email_array[i].date);
+            ChangeDateHeaderIfToday(GameState->email_array[i].date);
         }
     }
     
     if (gamecode.is_valid)
     {
-        gamecode.InitializeUI(&Thread, &GameMemory, &GameState, &win32);
+        gamecode.InitializeUI(&Thread, &GameMemory, GameState, &win32);
     } 
     
     
@@ -676,7 +685,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
             free(buffer);
         }
         
-        if (!InitFont(&GameState, PathToFont))
+        if (!InitFont(GameState, PathToFont))
         {
             MessageBox(Window, "Failed to load font", "Warning", MB_OK);
         }
@@ -703,7 +712,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
                 // Add some debugging to see what's happening
                 if (gamecode.is_valid) {
                     if (gamecode.InitializeUI) {
-                        gamecode.InitializeUI(&Thread, &GameMemory, &GameState, &win32);
+                        gamecode.InitializeUI(&Thread, &GameMemory, GameState, &win32);
                         // Maybe add a debug message here to confirm it ran
                         OutputDebugString("Successfully reinitialized UI after DLL reload\n");
                     } else {
@@ -719,11 +728,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
             if (gamecode.is_valid)
             {
                 glClear(GL_COLOR_BUFFER_BIT);
-                gamecode.UpdateAndRender(&Thread, &GameMemory, &GameState, &win32);
+                gamecode.UpdateAndRender(&Thread, &GameMemory, GameState, &win32);
                 SwapBuffers(g_hdc);
             }
             
-            Win32ProcessPendingMessages(&gamecode, &GameState, &win32);
+            Win32ProcessPendingMessages(&gamecode, GameState, &win32, &GameMemory);
         }
     }
     else

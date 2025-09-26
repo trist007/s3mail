@@ -33,7 +33,7 @@ int MonthNameToNumber(char *month);
 int CompareByTimestamp(const void *a, const void *b);
 void ParseEmail(char *email_content, char parsed_email[][256], int *line_count);
 void ExtractHeader(thread_context *Thread, char *date, EmailMetadata *email_array, int32 email_count,
-                   debug_platform_read_entire_file *ReadEntireFile, char *path, HeaderType header_type);
+                   debug_platform_read_entire_file *ReadEntireFile, char *path, HeaderType header_type, game_memory *Memory);
 
 
 #endif //S3MAIL_H
