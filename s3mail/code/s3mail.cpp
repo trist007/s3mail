@@ -732,12 +732,14 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     
                     debug_read_file_result Result = Memory->DEBUGPlatformReadEntireFile(&Thread, PathToFile, Memory);
                     
+                    /*
                     size_t copy_size = (Result.ContentsSize) <
                     (sizeof(GameState->email_content) - 1) ?
                         Result.ContentsSize : sizeof(GameState->email_content) - 1;
+*/
                     
-                    memmove(GameState->email_content, Result.Contents, copy_size);
-                    GameState->email_content[copy_size] = '\0';
+                    memmove(GameState->email_content, Result.Contents, Result.ContentsSize - 1);
+                    GameState->email_content[Result.ContentsSize] = '\0';
                     Memory->DEBUGPlatformFreeFileMemory(&Thread, Result.Contents);
                     ParseEmail(GameState->email_content, GameState->parsed_email, &GameState->line_count);
                     GameState->email.selected_item = 0;

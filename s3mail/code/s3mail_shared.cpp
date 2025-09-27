@@ -218,16 +218,28 @@ ParseEmail(char *email_content, char parsed_email[][256], int *line_count)
 {
     int lines = 0;
     
-    char *line = strtok((char *)email_content, "\n");
+    size_t content_length = strlen(email_content);
+    char *email_copy = (char*)malloc(content_length + 1);
+    strcpy(email_copy, email_content);
+    
+    char *line = strtok((char *)email_copy, "\n");
     
     while(line != NULL && lines < 1000)
     {
+        // remove trailing \r if present
+        size_t len = strlen(line);
+        if(len > 0 && line[len - 1] == '\r')
+        {
+            line[len - 1] = '\0';
+        }
+        
         strncpy(parsed_email[lines], line, 255);
         parsed_email[lines][255] = '\0';
         lines++;
         line = strtok(NULL, "\n");
     }
     
+    free(email_copy);
     *line_count = lines;
 }
 
