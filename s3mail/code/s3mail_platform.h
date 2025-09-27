@@ -33,6 +33,8 @@ typedef double real64;
 #include <GL/gl.h>
 #include "stb_truetype.h"
 
+#include "s3mail.h"
+
 time_t ParseEmailDate(char *date_header);
 
 // resolution 16:9
@@ -66,118 +68,35 @@ SafeTruncateUInt64(uint64 Value)
     return(Result);
 }
 
-// UI structures
-typedef struct {
-    float x, y, width, height;
-    char text[256];
-    int is_hovered;
-    int is_pressed;
-} UIButton;
-
-typedef struct {
-    float x_ratio, y_ratio, width_ratio, height_ratio;
-    float x, y, width, height;
-    char text[256];
-    int is_hovered;
-    int is_pressed;
-} UIButtonRatio;
-
-typedef struct {
-    float x_ratio, y_ratio, width_ratio, height_ratio;
-    float x, y, width, height;
-    char items[MAX_EMAILS][256];
-    int item_count;
-    int selected_item;
-} UIListRatio;
-
-typedef struct {
-    float x_ratio, y_ratio, width_ratio, height_ratio;
-    float x, y, width, height;
-    char items[MAX_EMAILS][256];
-    int item_count;
-    int selected_item;
-    int scroll_offset;
-} EmailContent;
-
-typedef struct {
-    float x, y, width, height;
-    char items[MAX_EMAILS][256];
-    int item_count;
-    int selected_item;
-} UIList;
-
-typedef enum {
-    MODE_FOLDER = 0,
-    MODE_EMAIL,
-    MODE_CONTACT,
-    MODE_READING_EMAIL,
-    MODE_COUNT
-} app_mode;
-
-typedef enum {
-    HEADER_FROM,
-    HEADER_SUBJECT,
-    HEADER_DATE
-} HeaderType;
-
 // Process struct for awscli
-typedef struct {
+struct Win32ProcessHandle
+{
     PROCESS_INFORMATION process_info;
     HANDLE stdout_read;
     bool32 process_running;
-} ProcessHandle;
+};
 
-// Email
-typedef struct {
-    char filename[MAX_PATH];
-    char email[256];
-    char subject[256];
-    char from[256];
-    char date[256];
-    FILETIME timestamp;
-    time_t parsed_time;
-    DWORD file_size;
-} EmailMetadata;
+// File IO
+typedef struct thread_context
+{
+    int Placeholder;
+} thread_context;
 
-// Game state that persists across DLL reloads
-typedef struct {
-    int window_width;
-    int window_height;
-    int mouse_x, mouse_y;
-    int mouse_down;
-    app_mode current_mode;
-    
-    // UI elements
-    UIButtonRatio compose_button;
-    UIButtonRatio delete_button;
-    UIListRatio folder_list;
-    UIListRatio email_list;
-    UIListRatio contact_list;
-    EmailContent email;
-    
-    // font
-    GLuint font_texture_id;
-    stbtt_bakedchar cdata[96];
-    
-    // awscli
-    ProcessHandle awscli;
-    char aws_output_buffer[4096];
-    bool32 show_aws_output;
-    
-    // email
-    EmailMetadata *email_array;
-    int32 email_count;
-    char email_content[4096];
-    char parsed_email[1000][256];
-    int32 line_count;
-    
-    // Memory
-    uint64 TotalSize;
-    void *GameMemoryBlock;
-    
-    void *permanent_storage;
-    uint64 permanent_storage_size;
-} game_state;
+typedef struct debug_read_file_result
+{
+    uint32 ContentsSize;
+    void *Contents;
+} debug_read_file_result;
+
+#define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(thread_context *Thread, void *Memory)
+typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
+
+#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) debug_read_file_result name(thread_context *Thread, char *Filename, void *Memory)
+typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
+
+#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(thread_context *Thread, char *Filename, uint32 MemorySize, void *Memory)
+typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
+
 
 typedef struct game_memory
 {
@@ -189,10 +108,11 @@ typedef struct game_memory
     uint64 TransientStorageSize;
     void *TransientStorage;
     
-    //debug_platform_free_file_memory *DEBUGPlatformFreeFileMemory;
-    //debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
-    //debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
+    debug_platform_free_file_memory *DEBUGPlatformFreeFileMemory;
+    debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
+    debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
 } game_memory;
+
 
 #define WIN32_STATE_FILE_NAME_COUNT MAX_PATH
 typedef struct win32_state
@@ -211,26 +131,8 @@ typedef struct win32_state
     char *OnePastLastEXEFileNameSlash;
 } win32_state;
 
-// File IO
-typedef struct thread_context
-{
-    int Placeholder;
-} thread_context;
-
-typedef struct debug_read_file_result
-{
-    uint32 ContentsSize;
-    void *Contents;
-} debug_read_file_result;
-
-#define DEBUG_PLATFORM_FREE_FILE_MEMORY(name) void name(thread_context *Thread, void *Memory)
-typedef DEBUG_PLATFORM_FREE_FILE_MEMORY(debug_platform_free_file_memory);
-
-#define DEBUG_PLATFORM_READ_ENTIRE_FILE(name) debug_read_file_result name(thread_context *Thread, char *Filename, game_memory *Memory)
-typedef DEBUG_PLATFORM_READ_ENTIRE_FILE(debug_platform_read_entire_file);
-
-#define DEBUG_PLATFORM_WRITE_ENTIRE_FILE(name) bool32 name(thread_context *Thread, char *Filename, uint32 MemorySize, void *Memory)
-typedef DEBUG_PLATFORM_WRITE_ENTIRE_FILE(debug_platform_write_entire_file);
+struct game_state;
+struct EmailMetadata;
 
 // Platform services provided by EXE to DLL
 typedef struct {
@@ -243,9 +145,6 @@ typedef struct {
     char* (*ReadProcessOutput)(HANDLE stdout_read);
     
     // file IO
-    debug_platform_free_file_memory *DEBUGPlatformFreeFileMemory;
-    debug_platform_read_entire_file *DEBUGPlatformReadEntireFile;
-    debug_platform_write_entire_file *DEBUGPlatformWriteEntireFile;
     int (*ListFilesInDirectory)(char *directory, EmailMetadata **email_array);
     DWORD (*GetCurrentWorkingDirectory)(char *dir);
     
@@ -253,15 +152,6 @@ typedef struct {
     game_state *GameState;
     HWND Window;
 } PlatformAPI;
-
-// DLL interface - functions the DLL must export
-/*
-typedef struct {
-    void (*UpdateAndRender)(game_state *GameState, PlatformAPI *platform);
-    void (*HandleKeyPress)(game_state *GameState, int key_code);
-    void (*InitializeUI)(game_state *GameState);
-} GameAPI;
-*/
 
 // DLL export signature
 #define GAME_UPDATE_AND_RENDER(name) void name(thread_context *Thread, game_memory *Memory, game_state *GameState, PlatformAPI* platform)

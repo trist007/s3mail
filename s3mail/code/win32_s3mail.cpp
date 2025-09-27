@@ -1,3 +1,4 @@
+#include "s3mail_shared.h"
 #include "s3mail_platform.h"
 #include "s3mail.h"
 
@@ -8,10 +9,56 @@
 #include <strsafe.h>
 #include <time.h>
 
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h"
+
 // Platform state
 global_variable bool32 GlobalRunning;
 global_variable HDC g_hdc = 0;
 global_variable HGLRC g_hglrc = 0;
+
+int
+InitFont(game_state *GameState, const char *font_path)
+{
+    static unsigned char font_buffer[1024*1024];
+    static unsigned char *font_bitmap;
+    stbtt_fontinfo font;
+    
+    FILE *file = fopen(font_path, "rb");
+    if (!file) return 0;
+    
+    size_t size = fread(font_buffer, 1, 1024*1024, file);
+    fclose(file);
+    if (size == 0) return 0;
+    
+    stbtt_InitFont(&font, font_buffer, 0);
+    
+    font_bitmap = (unsigned char*)malloc(512*512);
+    stbtt_BakeFontBitmap(font_buffer, 0, 24.0f, font_bitmap, 512, 512, 32, 96, GameState->cdata);
+    
+    glGenTextures(1, &GameState->font_texture_id);
+    glBindTexture(GL_TEXTURE_2D, GameState->font_texture_id);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, 512, 512, 0, GL_ALPHA, GL_UNSIGNED_BYTE, font_bitmap);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    free(font_bitmap);
+    
+    return(1);
+}
+
+void
+HandleResizey(int width, int height)
+{
+    if (height == 0) height = 1;
+    
+    glViewport(0, 0, width, height);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0, width, 0.0, height, -1.0, 1.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+}
 
 // Platform API implementation
 void Win32ShowMessage(HWND Window, const char *message)
@@ -53,9 +100,9 @@ Win32ExecuteAWSCLI(game_state *GameState, char *command)
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
         
-        GameState->awscli.process_info = pi;
-        GameState->awscli.stdout_read = stdout_read;
-        GameState->awscli.process_running = true;
+        GameState->awscli->process_info = pi;
+        GameState->awscli->stdout_read = stdout_read;
+        GameState->awscli->process_running = true;
     }
     else
     {
@@ -303,10 +350,12 @@ DEBUG_PLATFORM_READ_ENTIRE_FILE(DEBUGPlatformReadEntireFile)
             uint32 FileSize32 = SafeTruncateUInt64(FileSize.QuadPart);
             //Result.Contents = VirtualAlloc(0, FileSize32, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
             
+            game_memory *GameMemory = (game_memory *)Memory;
+            
             uint8 *TransientPtr = 0;
             if(!TransientPtr)
             {
-                TransientPtr = (uint8 *)Memory->TransientStorage;
+                TransientPtr = (uint8 *)GameMemory->TransientStorage;
             }
             
             Result.Contents = TransientPtr;
@@ -525,12 +574,10 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     game_memory GameMemory = {};
     GameMemory.PermanentStorageSize = Megabytes(64); // Memory for entire program lifetime
     GameMemory.TransientStorageSize = Gigabytes(1); // Memory for short-term scratchpad
-    /*
+    
     GameMemory.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
     GameMemory.DEBUGPlatformReadEntireFile = DEBUGPlatformReadEntireFile;
     GameMemory.DEBUGPlatformWriteEntireFile = DEBUGPlatformWriteEntireFile;
-*/
-    
     
     // TODO(trist007): Handle various memory footprints (USING
     // SYSTEM METRICS)
@@ -541,6 +588,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     // TODO(trist007): TransientStorage needs to be broken up
     // into game transient and cache transient, and only the
     // former need be saved for state playback.
+    
     Win32State.TotalSize = GameMemory.PermanentStorageSize + GameMemory.TransientStorageSize;
     Win32State.GameMemoryBlock = VirtualAlloc(BaseAddress, (size_t)Win32State.TotalSize,
                                               MEM_RESERVE|MEM_COMMIT,
@@ -554,11 +602,11 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     Win32GetEXEFileName(&Win32State);
     
     char SourceGameCodeDLLFullPath[WIN32_STATE_FILE_NAME_COUNT];
-    Win32BuildEXEPathFileName(&Win32State, "s3mail_game.dll",
+    Win32BuildEXEPathFileName(&Win32State, "s3mail.dll",
                               sizeof(SourceGameCodeDLLFullPath), SourceGameCodeDLLFullPath);
     
     char TempGameCodeDLLFullPath[WIN32_STATE_FILE_NAME_COUNT];
-    Win32BuildEXEPathFileName(&Win32State, "s3mail_game_temp.dll",
+    Win32BuildEXEPathFileName(&Win32State, "s3mail_temp.dll",
                               sizeof(TempGameCodeDLLFullPath), TempGameCodeDLLFullPath);
     
     char GameCodeLockFullPath[WIN32_STATE_FILE_NAME_COUNT];
@@ -610,9 +658,6 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.ReadProcessOutput = Win32ReadProcessOutput;
     win32.ListFilesInDirectory = Win32ListFilesInDirectory;
     win32.GetCurrentWorkingDirectory = Win32GetCurrentWorkingDirectory;
-    win32.DEBUGPlatformFreeFileMemory = DEBUGPlatformFreeFileMemory;
-    win32.DEBUGPlatformReadEntireFile = DEBUGPlatformReadEntireFile;
-    win32.DEBUGPlatformWriteEntireFile = DEBUGPlatformWriteEntireFile;
     win32.GameState = GameState;
     win32.Window = Window;
     
@@ -626,12 +671,9 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     GetDate(date, sizeof(date));
     
     // Extract email Headers
-    ExtractHeader(&Thread, date, GameState->email_array, GameState->email_count, win32.DEBUGPlatformReadEntireFile,
-                  "C:/Users/Tristan/.email", HEADER_FROM, &GameMemory);
-    ExtractHeader(&Thread, date, GameState->email_array, GameState->email_count, win32.DEBUGPlatformReadEntireFile,
-                  "C:/Users/Tristan/.email", HEADER_SUBJECT, &GameMemory);
-    ExtractHeader(&Thread, date, GameState->email_array, GameState->email_count, win32.DEBUGPlatformReadEntireFile,
-                  "C:/Users/Tristan/.email", HEADER_DATE, &GameMemory);
+    ExtractHeader(&Thread, date, GameState->email_array, GameState->email_count, "C:/Users/Tristan/.email", HEADER_FROM, &GameMemory);
+    ExtractHeader(&Thread, date, GameState->email_array, GameState->email_count, "C:/Users/Tristan/.email", HEADER_SUBJECT, &GameMemory);
+    ExtractHeader(&Thread, date, GameState->email_array, GameState->email_count, "C:/Users/Tristan/.email", HEADER_DATE, &GameMemory);
     
     // sort emails by Date Header
     qsort(GameState->email_array, GameState->email_count, sizeof(EmailMetadata), CompareByTimestamp);
