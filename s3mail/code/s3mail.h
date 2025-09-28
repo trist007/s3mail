@@ -73,6 +73,8 @@ struct EmailMetadata
     char from[256];
     char date[256];
     int header_lines;
+    int text_line_start;
+    int text_line_end;
     bool32 showHeaders;
     FILETIME timestamp;
     time_t parsed_time;

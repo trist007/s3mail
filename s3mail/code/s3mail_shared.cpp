@@ -1,5 +1,7 @@
 #include "s3mail_shared.h"
 #include <stdio.h>
+#include <string.h>
+#include <ctype.h>
 #include <time.h>
 
 // utility functions
@@ -251,13 +253,102 @@ FindHeaderLines(char *email_content)
 }
 
 char*
-FindBodyStart(char *email_content)
+FindMIMESection(char *email_content)
 {
-    char *double_newline = strstr(email_content, "\n\n");
-    char *crlf_double = strstr(email_content, "\r\n\r\n");
+    //char *double_newline = strstr(email_content, "\n\n");
+    //char *crlf_double = strstr(email_content, "\r\n\r\n");
+    char *MIME_SECTION = strstr(email_content, "--_000_");
     
-    if(double_newline) return double_newline + 2;
-    if(crlf_double) return crlf_double + 4;
+    //if(double_newline) return double_newline + 2;
+    //if(crlf_double) return crlf_double + 4;
+    if(MIME_SECTION) return MIME_SECTION;
+    return(0);
+}
+
+int
+tristanstrncmp(char *x, char *y, size_t n)
+{
+    while(n > 0)
+    {
+        if(*x != *y)
+        {
+            return(unsigned char)*x - (unsigned char)*y;
+        }
+        
+        // search has read until the end of the buffer
+        if(*x == '\0') return(0);
+        
+        x++;
+        y++;
+        n--;
+    }
+    
+    // there was a match when n == 0 the whole buffs were
+    // compared and they match
+    return(0);
+}
+
+char *
+FindTextPlainContent(char *MIME_Section)
+{
+    char *ptr = MIME_Section;
+    
+    // go through the Mime boundary line to the next line
+    while(*ptr != '\0' && *ptr != '\n') ptr++;
+    if(*ptr == '\n') ptr++;
+    
+    // check lines for Content-Type until we hit blank line(\n\n)
+    while(*ptr != '\0' && !(*ptr == '\n' && *(ptr+1) == '\n'))
+    {
+        if(tristanstrncmp(ptr, "Content-Type:", 13) == 0)
+        {
+            if(strstr(ptr, "text/plain"))
+            {
+                // found the match text/plain
+                while(*ptr != '\0' && !(*ptr == '\n' && *(ptr+1) == '\n'))
+                {
+                    ptr++;
+                }
+                
+                // skip the \n\n
+                if(*ptr == '\n') ptr += 2;  
+                
+                // return the beginning of the text/plain email body
+                return(ptr);
+            }
+        }
+        
+        // move to next line
+        while(*ptr != '\0' && *ptr != '\n') ptr++;
+        if(*ptr == '\n') ptr++;
+    }
+    
+    // no text/plain section found
+    return(0); 
+}
+
+char *
+FindTextPlainEnd(char *content_start)
+{
+    char *ptr = content_start;
+    
+    while(*ptr != '\0')
+    {
+        if(*ptr == '\n' || ptr == content_start)
+        {
+            // skip newline
+            if(*ptr == '\n') ptr++;
+            
+            if(*ptr == '-' && *(ptr+1) == '-')
+            {
+                return(ptr);
+            }
+        }
+        
+        ptr++;
+    }
+    
+    // no boundary found
     return(0);
 }
 

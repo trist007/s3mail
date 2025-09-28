@@ -19,11 +19,14 @@ void ChangeDateHeaderIfToday(char *date_header);
 int MonthNameToNumber(char *month);
 int CompareByTimestamp(const void *a, const void *b);
 int FindHeaderLines(char *email_content);
-char* FindBodyStart(char *email_content);
+char* FindMIMESection(char *email_content);
+int tristanstrncmp(char *x, char *y, size_t n);
+char* FindTextPlainContent(char *MIME_section);
+char* FindTextPlainEnd(char *content_start);
+
 void ParseEmail(char *email_content, char parsed_email[][256], int *line_count);
 
 struct game_memory;
 
 void ExtractHeader(thread_context *Thread, char *date, EmailMetadata *email_array, int32 email_count, char *path, HeaderType header_type, game_memory *Memory);
-
 #endif //S3MAIL_SHARED_H

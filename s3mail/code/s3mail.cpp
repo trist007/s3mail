@@ -1,6 +1,5 @@
 #include <windows.h>
-#include "stb_truetype.h"
-#define STB_TRUETYPE_IMPLEMENTATION
+
 #include "s3mail_shared.h"
 #include "s3mail.h"
 #include "s3mail_platform.h"
@@ -11,6 +10,9 @@
 #include <strsafe.h>
 #include <time.h>
 #include <GL/gl.h>
+
+#define STB_TRUETYPE_IMPLEMENTATION
+#include "stb_truetype.h"
 
 // Email Layout format string
 #define EMAIL_FORMAT "%-30.30s | %-69.69s | %-25.25s"
@@ -756,7 +758,6 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     GameState->email_content[Result.ContentsSize] = '\0';
                     Memory->DEBUGPlatformFreeFileMemory(&Thread, Result.Contents);
                     GameState->email_array->header_lines = FindHeaderLines(GameState->email_content);
-                    //GameState->email_array->body_start = FindBodyStart(GameState->email_content);
                     ParseEmail(GameState->email_content, GameState->parsed_email, &GameState->line_count);
                     GameState->email.selected_item = 0;
                     GameState->email.item_count = GameState->line_count;
