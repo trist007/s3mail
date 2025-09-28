@@ -435,20 +435,34 @@ void RenderEmailContent(EmailContent* email, game_state* GameState)
         int start_line = email->scroll_offset;
         int end_line = min(start_line + lines_to_show, email->item_count);
         
-        for(int i = start_line; i < end_line; i++) {
-            float line_y = email->y + (email->height - ((i - start_line + 1) * 25));
-            DrawTextGameEmail(GameState, 
-                              GameState->parsed_email[i], 
-                              email->x + 5, 
-                              line_y);
+        if(GameState->email_array->showHeaders)
+        {
+            
+            for(int i = start_line; i < end_line; i++) {
+                float line_y = email->y + (email->height - ((i - start_line + 1) * 25));
+                DrawTextGameEmail(GameState, 
+                                  GameState->parsed_email[i], 
+                                  email->x + 5, 
+                                  line_y);
+            }
         }
-        /*
-        DrawTextGameEmail(platform->GameState,
-                          platform->GameState->parsed_email[platform->GameState->email.selected_item],
-                          (0.1146f*WINDOW_WIDTH_HD),
-                          (0.0092f*WINDOW_HEIGHT_HD));
-    }
-*/
+        else
+        {
+            // skip header lines, start from body
+            int header_count = GameState->email_array->header_lines;
+            for(int i = start_line; i < end_line; i++) {
+                //int actual_line = i + header_count + 1;
+                int actual_line = i + header_count + 5;
+                if(actual_line < GameState->line_count)
+                {
+                    float line_y = email->y + (email->height - ((i - start_line + 1) * 25));
+                    DrawTextGameEmail(GameState, 
+                                      GameState->parsed_email[actual_line], 
+                                      email->x + 5, 
+                                      line_y);
+                }
+            }
+        }
     }
 }
 
@@ -741,6 +755,8 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     memmove(GameState->email_content, Result.Contents, Result.ContentsSize - 1);
                     GameState->email_content[Result.ContentsSize] = '\0';
                     Memory->DEBUGPlatformFreeFileMemory(&Thread, Result.Contents);
+                    GameState->email_array->header_lines = FindHeaderLines(GameState->email_content);
+                    //GameState->email_array->body_start = FindBodyStart(GameState->email_content);
                     ParseEmail(GameState->email_content, GameState->parsed_email, &GameState->line_count);
                     GameState->email.selected_item = 0;
                     GameState->email.item_count = GameState->line_count;
@@ -771,6 +787,13 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
         {
             switch (key_code)
             {
+                // show headers
+                case 'H':
+                {
+                    GameState->email_array->showHeaders =
+                        !GameState->email_array->showHeaders;
+                    //GameState->email.scroll_offset = 0;
+                } break;
                 // scroll down one line
                 case 'J':
                 {
@@ -801,7 +824,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 } break;
                 
                 // scroll up a page
-                case '-':
+                case VK_OEM_MINUS:
                 {
                     int lines_per_page = 30;
                     GameState->email.scroll_offset -= lines_per_page;
@@ -829,16 +852,11 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     // code for reply email
                 } break;
                 
-                // show headers
-                case 'H':
-                {
-                    // code for show email headers
-                } break;
-                
                 // go back to email_list
                 case 'I':
                 {
                     GameState->current_mode = MODE_EMAIL;
+                    GameState->email_array->showHeaders = 0;
                 } break;
             }
             // Reading email mode handling

@@ -213,6 +213,54 @@ CompareByTimestamp(const void *a, const void *b)
     return(0);
 }
 
+int
+FindHeaderLines(char *email_content)
+{
+    int lines_count = 0;
+    int char_pos = 0;
+    int i = 0;
+    
+    while(email_content[i] != '\0')
+    {
+        char current_char = email_content[i];
+        
+        if(current_char == '\n')
+        {
+            if(char_pos == 0)
+            {
+                return(lines_count);
+            }
+            
+            lines_count++;
+            char_pos = 0;
+        }
+        else if(current_char == '\r')
+        {
+            // skipping carriage returns
+        }
+        else
+        {
+            // regular char
+            char_pos++;
+        }
+        
+        i++;
+    }
+    
+    return(lines_count);
+}
+
+char*
+FindBodyStart(char *email_content)
+{
+    char *double_newline = strstr(email_content, "\n\n");
+    char *crlf_double = strstr(email_content, "\r\n\r\n");
+    
+    if(double_newline) return double_newline + 2;
+    if(crlf_double) return crlf_double + 4;
+    return(0);
+}
+
 void
 ParseEmail(char *email_content, char parsed_email[][256], int *line_count)
 {

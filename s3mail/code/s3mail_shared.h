@@ -18,6 +18,8 @@ int CheckIfEmailReceivedToday(char *date, char *date_header);
 void ChangeDateHeaderIfToday(char *date_header);
 int MonthNameToNumber(char *month);
 int CompareByTimestamp(const void *a, const void *b);
+int FindHeaderLines(char *email_content);
+char* FindBodyStart(char *email_content);
 void ParseEmail(char *email_content, char parsed_email[][256], int *line_count);
 
 struct game_memory;
