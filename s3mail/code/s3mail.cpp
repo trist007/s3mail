@@ -433,38 +433,44 @@ void RenderEmailContent(EmailContent* email, game_state* GameState)
     {
         // Draw email content within the content area
         SetColor(0.0f, 0.0f, 0.0f);
+        
+        int render_start_line;
+        int render_end_line;
+        
+        /*
         int lines_to_show = 30;
         int start_line = email->scroll_offset;
         int end_line = min(start_line + lines_to_show, email->item_count);
+*/
         
         if(GameState->email_array->showHeaders)
         {
-            
-            for(int i = start_line; i < end_line; i++) {
-                float line_y = email->y + (email->height - ((i - start_line + 1) * 25));
-                DrawTextGameEmail(GameState, 
-                                  GameState->parsed_email[i], 
-                                  email->x + 5, 
-                                  line_y);
-            }
+            render_start_line = 0;
+            render_end_line = GameState->line_count;
         }
         else
         {
-            // skip header lines, start from body
-            int header_count = GameState->email_array->header_lines;
-            for(int i = start_line; i < end_line; i++) {
-                //int actual_line = i + header_count + 1;
-                int actual_line = i + header_count + 5;
-                if(actual_line < GameState->line_count)
-                {
-                    float line_y = email->y + (email->height - ((i - start_line + 1) * 25));
-                    DrawTextGameEmail(GameState, 
-                                      GameState->parsed_email[actual_line], 
-                                      email->x + 5, 
-                                      line_y);
-                }
-            }
+            render_start_line = GameState->email_array->textplain_start;
+            render_end_line = GameState->email_array->textplain_end;
         }
+        
+        // render lines from render_start to render_end
+        int lines_to_show = 30;
+        int start_line = render_start_line + email->scroll_offset;
+        int end_line = min(start_line + lines_to_show, render_end_line);
+        
+        for(int i = start_line;
+            i < end_line;
+            i++)
+        {
+            float line_y = email->y + (email->height - ((i - start_line + 1) * 25));
+            DrawTextGameEmail(GameState,
+                              GameState->parsed_email[i],
+                              email->x + 5,
+                              line_y);
+        }
+        
+        
     }
 }
 
@@ -759,6 +765,20 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     Memory->DEBUGPlatformFreeFileMemory(&Thread, Result.Contents);
                     GameState->email_array->header_lines = FindHeaderLines(GameState->email_content);
                     ParseEmail(GameState->email_content, GameState->parsed_email, &GameState->line_count);
+                    
+                    int textplain_start_line = FindTextPlainContent(GameState->parsed_email, GameState->line_count);
+                    
+                    if(textplain_start_line >= 0)
+                    {
+                        int textplain_end_line = FindTextPlainEnd(GameState->parsed_email,
+                                                                  GameState->line_count,
+                                                                  textplain_start_line);
+                        
+                        GameState->email_array->textplain_start = textplain_start_line;
+                        GameState->email_array->textplain_end = textplain_end_line;
+                    }
+                    
+                    
                     GameState->email.selected_item = 0;
                     GameState->email.item_count = GameState->line_count;
                     

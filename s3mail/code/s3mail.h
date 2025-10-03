@@ -73,8 +73,8 @@ struct EmailMetadata
     char from[256];
     char date[256];
     int header_lines;
-    int text_line_start;
-    int text_line_end;
+    int textplain_start;
+    int textplain_end;
     bool32 showHeaders;
     FILETIME timestamp;
     time_t parsed_time;
@@ -113,7 +113,7 @@ struct game_state
     // email
     EmailMetadata *email_array;
     int32 email_count;
-    char email_content[32768];
+    char email_content[256000];
     char parsed_email[1000][256];
     int32 line_count;
     

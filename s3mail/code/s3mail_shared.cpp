@@ -253,8 +253,9 @@ FindHeaderLines(char *email_content)
 }
 
 char*
-FindMIMESection(char *email_content)
+FindMIMESection(char (*parsed_email)[256], int line_count)
 {
+    /*
     //char *double_newline = strstr(email_content, "\n\n");
     //char *crlf_double = strstr(email_content, "\r\n\r\n");
     char *MIME_SECTION = strstr(email_content, "--_000_");
@@ -262,6 +263,21 @@ FindMIMESection(char *email_content)
     //if(double_newline) return double_newline + 2;
     //if(crlf_double) return crlf_double + 4;
     if(MIME_SECTION) return MIME_SECTION;
+    return(0);
+*/
+    
+    for(int i = 0;
+        i < line_count;
+        i++)
+    {
+        char *result = strstr(parsed_email[i], "--_000_");
+        if(result)
+        {
+            return(result);
+        }
+    }
+    
+    // no match found
     return(0);
 }
 
@@ -288,68 +304,71 @@ tristanstrncmp(char *x, char *y, size_t n)
     return(0);
 }
 
-char *
-FindTextPlainContent(char *MIME_Section)
+int
+FindTextPlainContent(char (*parsed_email)[256], int line_count)
 {
-    char *ptr = MIME_Section;
+    // find MIME boundary
+    int mime_line = -1;
     
-    // go through the Mime boundary line to the next line
-    while(*ptr != '\0' && *ptr != '\n') ptr++;
-    if(*ptr == '\n') ptr++;
-    
-    // check lines for Content-Type until we hit blank line(\n\n)
-    while(*ptr != '\0' && !(*ptr == '\n' && *(ptr+1) == '\n'))
+    for(int i = 0;
+        i < line_count;
+        i++)
     {
-        if(tristanstrncmp(ptr, "Content-Type:", 13) == 0)
+        if(strstr(parsed_email[i], "--_000_"))
         {
-            if(strstr(ptr, "text/plain"))
-            {
-                // found the match text/plain
-                while(*ptr != '\0' && !(*ptr == '\n' && *(ptr+1) == '\n'))
-                {
-                    ptr++;
-                }
-                
-                // skip the \n\n
-                if(*ptr == '\n') ptr += 2;  
-                
-                // return the beginning of the text/plain email body
-                return(ptr);
-            }
+            mime_line = i;
+            break;
         }
-        
-        // move to next line
-        while(*ptr != '\0' && *ptr != '\n') ptr++;
-        if(*ptr == '\n') ptr++;
     }
     
-    // no text/plain section found
-    return(0); 
+    if(mime_line < 0) return(-1);
+    
+    // search for Content-Type: text/plain
+    for(int i = mime_line + 1;
+        i < line_count;
+        i++)
+    {
+        // check for blank line
+        if(parsed_email[i][0] == '\0' || parsed_email[i][0] == '\r')
+        {
+            break;
+        }
+        
+        if(tristanstrncmp(parsed_email[i], "Content-Type:", 13) == 0)
+        {
+            if(strstr(parsed_email[i], "text/plain"))
+            {
+                // found it, skip to the blank line and return the next line
+                for(int j = i + 1;
+                    j < line_count;
+                    j++)
+                {
+                    if(parsed_email[j][0] == '\0' || parsed_email[j][0] == '\r')
+                    {
+                        return(j + 1);
+                    }
+                }
+            }
+        }
+    }
+    
+    return(-1);
 }
 
-char *
-FindTextPlainEnd(char *content_start)
+int
+FindTextPlainEnd(char (*parsed_email)[256], int line_count, int start_line)
 {
-    char *ptr = content_start;
-    
-    while(*ptr != '\0')
+    for(int i = start_line;
+        i < line_count;
+        i++)
     {
-        if(*ptr == '\n' || ptr == content_start)
+        if(parsed_email[i][0] == '-' && parsed_email[i][1] == '-')
         {
-            // skip newline
-            if(*ptr == '\n') ptr++;
-            
-            if(*ptr == '-' && *(ptr+1) == '-')
-            {
-                return(ptr);
-            }
+            return(i);
         }
-        
-        ptr++;
     }
     
-    // no boundary found
-    return(0);
+    return(line_count);
 }
 
 void

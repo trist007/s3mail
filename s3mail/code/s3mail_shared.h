@@ -19,10 +19,10 @@ void ChangeDateHeaderIfToday(char *date_header);
 int MonthNameToNumber(char *month);
 int CompareByTimestamp(const void *a, const void *b);
 int FindHeaderLines(char *email_content);
-char* FindMIMESection(char *email_content);
+char* FindMIMESection(char (*parsed_email)[256], int line_count);
 int tristanstrncmp(char *x, char *y, size_t n);
-char* FindTextPlainContent(char *MIME_section);
-char* FindTextPlainEnd(char *content_start);
+int FindTextPlainContent(char (*parsed_email)[256], int line_count);
+int FindTextPlainEnd(char (*parsed_email)[256], int line_count, int start_line);
 
 void ParseEmail(char *email_content, char parsed_email[][256], int *line_count);
 
