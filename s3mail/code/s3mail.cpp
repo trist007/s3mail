@@ -816,6 +816,9 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 {
                     GameState->email_array->showHeaders =
                         !GameState->email_array->showHeaders;
+                    
+                    // reset scroll offset
+                    GameState->email.scroll_offset = 0;
                     //GameState->email.scroll_offset = 0;
                 } break;
                 // scroll down one line
