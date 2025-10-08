@@ -299,6 +299,25 @@ void UpdateEmailContent(EmailContent* email, int mouse_x, int mouse_y, int mouse
     
 }
 
+void UpdateReplyEmail(EmailContent* email, int mouse_x, int mouse_y, int mouse_down, int window_height)
+{
+    int gl_y = window_height - mouse_y;
+    
+    email->x = WINDOW_WIDTH_HD * email->x_ratio;
+    email->y = WINDOW_HEIGHT_HD * email->y_ratio;
+    email->width = WINDOW_WIDTH_HD * email->width_ratio;
+    email->height = WINDOW_HEIGHT_HD * email->height_ratio;
+    
+    if (mouse_down &&  PointInRect(mouse_x, gl_y, email->x, email->y, email->width, email->height)) {
+        int item_height = 25;
+        int clicked_item = (gl_y - email->y) / item_height;
+        if (clicked_item >= 0 && clicked_item < email->item_count) {
+            email->selected_item = clicked_item + email->scroll_offset;
+        }
+    }
+    
+}
+
 void RenderListRatio(UIListRatio* list, game_state* GameState)
 {
     
@@ -474,6 +493,73 @@ void RenderEmailContent(EmailContent* email, game_state* GameState)
     }
 }
 
+void RenderReplyContent(EmailContent* email, game_state* GameState)
+{
+    
+    email->x = WINDOW_WIDTH_HD * email->x_ratio;
+    email->y = WINDOW_HEIGHT_HD * email->y_ratio;
+    email->width = WINDOW_WIDTH_HD * email->width_ratio;
+    email->height = WINDOW_HEIGHT_HD * email->height_ratio;
+    
+    // Background
+    SetColor(0.9f, 0.9f, 0.9f);
+    DrawRect(email->x, email->y, email->width, email->height);
+    
+    // Border
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawRectOutline(email->x, email->y, email->width, email->height);
+    
+    if(GameState->email_content[0] == '\0')
+    {
+        SetColor(1.0f, 0.0f, 0.0f); // Red text for debug
+        DrawTextGameEmail(GameState, "EMAIL CONTENT IS EMPTY!", 
+                          (0.1146f*WINDOW_WIDTH_HD), (0.1f*WINDOW_HEIGHT_HD));
+    }
+    else
+    {
+        // Draw email content within the content area
+        SetColor(0.0f, 0.0f, 0.0f);
+        
+        int render_start_line;
+        int render_end_line;
+        
+        /*
+        int lines_to_show = 30;
+        int start_line = email->scroll_offset;
+        int end_line = min(start_line + lines_to_show, email->item_count);
+*/
+        
+        if(GameState->email_array->showHeaders)
+        {
+            render_start_line = 0;
+            render_end_line = GameState->line_count;
+        }
+        else
+        {
+            render_start_line = GameState->email_array->textplain_start;
+            render_end_line = GameState->email_array->textplain_end;
+        }
+        
+        // render lines from render_start to render_end
+        int lines_to_show = 30;
+        int start_line = render_start_line + email->scroll_offset;
+        int end_line = min(start_line + lines_to_show, render_end_line);
+        
+        for(int i = start_line;
+            i < end_line;
+            i++)
+        {
+            float line_y = email->y + (email->height - ((i - start_line + 1) * 25));
+            DrawTextGameEmail(GameState,
+                              GameState->parsed_email[i],
+                              email->x + 5,
+                              line_y);
+        }
+        
+        
+    }
+}
+
 __declspec(dllexport)
 GAME_INITIALIZE_UI(GameInitializeUI)
 {
@@ -573,16 +659,24 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     UpdateButtonRatio(&GameState->delete_button, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
     UpdateListRatio(&GameState->folder_list, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
     
-    if(GameState->current_mode == MODE_FOLDER ||
-       GameState->current_mode == MODE_EMAIL ||
-       GameState->current_mode == MODE_CONTACT ||
-       GameState->current_mode == MODE_EMAIL)
+    switch(GameState->current_mode)
     {
-        UpdateListRatio(&GameState->email_list, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
-    }
-    else
-    {
-        UpdateEmailContent(&GameState->email, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
+        case MODE_FOLDER:
+        case MODE_CONTACT:
+        case MODE_EMAIL:
+        {
+            UpdateListRatio(&GameState->email_list, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
+        } break;
+        
+        case MODE_READING_EMAIL:
+        {
+            UpdateEmailContent(&GameState->email, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
+        } break;
+        
+        case MODE_REPLYING_EMAIL:
+        {
+            UpdateReplyEmail(&GameState->email, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
+        }
     }
     
     UpdateListRatio(&GameState->contact_list, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
@@ -592,16 +686,24 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
     RenderButtonRatio(&GameState->delete_button, GameState);
     RenderListRatio(&GameState->folder_list, GameState);
     
-    if(GameState->current_mode == MODE_FOLDER ||
-       GameState->current_mode == MODE_EMAIL ||
-       GameState->current_mode == MODE_CONTACT ||
-       GameState->current_mode == MODE_EMAIL)
+    switch(GameState->current_mode)
     {
-        RenderListWithHeader(&GameState->email_list, GameState);
-    }
-    else
-    {
-        RenderEmailContent(&GameState->email, GameState);
+        case MODE_FOLDER:
+        case MODE_CONTACT:
+        case MODE_EMAIL:
+        {
+            RenderListWithHeader(&GameState->email_list, GameState);
+        } break;
+        
+        case MODE_READING_EMAIL:
+        {
+            RenderEmailContent(&GameState->email, GameState);
+        } break;
+        
+        case MODE_REPLYING_EMAIL:
+        {
+            RenderReplyContent(&GameState->email, GameState);
+        } break;
     }
     
     RenderListRatio(&GameState->contact_list, GameState);
@@ -916,6 +1018,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 case 'R':
                 {
                     // code for reply email
+                    GameState->current_mode = MODE_REPLYING_EMAIL;
                 } break;
                 
                 // go back to email_list
@@ -926,6 +1029,16 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 } break;
             }
             // Reading email mode handling
+        } break;
+        case MODE_REPLYING_EMAIL:
+        {
+            switch (key_code)
+            {
+                case 'J':
+                {
+                    
+                } break;
+            }
         } break;
     }
 }

@@ -9,6 +9,7 @@ typedef enum {
     MODE_EMAIL,
     MODE_CONTACT,
     MODE_READING_EMAIL,
+    MODE_REPLYING_EMAIL,
     MODE_COUNT
 } app_mode;
 
