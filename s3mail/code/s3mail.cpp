@@ -782,6 +782,9 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     GameState->email.selected_item = 0;
                     GameState->email.item_count = GameState->line_count;
                     
+                    // reset scroll position for new email
+                    GameState->email.scroll_offset = 0;
+                    
                 } break;
                 
                 // back to preview mode
@@ -816,9 +819,27 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     //GameState->email.scroll_offset = 0;
                 } break;
                 // scroll down one line
+                /*
                 case 'J':
                 {
                     if(GameState->email.scroll_offset < GameState->email.item_count - 1)
+                    {
+                        GameState->email.scroll_offset++;
+                    }
+                } break;
+*/
+                case 'J':
+                {
+                    int render_start_line = GameState->email_array->showHeaders ? 
+                        0 : GameState->email_array->textplain_start;
+                    int render_end_line = GameState->email_array->showHeaders ? 
+                        GameState->line_count : GameState->email_array->textplain_end;
+                    int lines_per_page = 30;
+                    int total_lines = render_end_line - render_start_line;
+                    
+                    // Only scroll if content extends beyond visible area
+                    if(total_lines > lines_per_page && 
+                       GameState->email.scroll_offset < total_lines - lines_per_page)
                     {
                         GameState->email.scroll_offset++;
                     }
@@ -836,6 +857,27 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 // scroll down a page
                 case VK_SPACE:
                 {
+                    int render_start_line = GameState->email_array->showHeaders ? 
+                        0 : GameState->email_array->textplain_start;
+                    int render_end_line = GameState->email_array->showHeaders ? 
+                        GameState->line_count : GameState->email_array->textplain_end;
+                    int lines_per_page = 30;
+                    int total_lines = render_end_line - render_start_line;
+                    
+                    // Only scroll if content extends beyond visible area
+                    if(total_lines > lines_per_page)
+                    {
+                        GameState->email.scroll_offset += lines_per_page;
+                        int max_scroll = total_lines - lines_per_page;
+                        if(GameState->email.scroll_offset > max_scroll)
+                        {
+                            GameState->email.scroll_offset = max_scroll;
+                        }
+                    }
+                } break;
+                /*
+                case VK_SPACE:
+                {
                     int lines_per_page = 30;
                     GameState->email.scroll_offset += lines_per_page;
                     if(GameState->email.scroll_offset >= GameState->email.item_count)
@@ -843,7 +885,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         GameState->email.scroll_offset = GameState->email.item_count - 1;
                     }
                 } break;
-                
+                */
                 // scroll up a page
                 case VK_OEM_MINUS:
                 {

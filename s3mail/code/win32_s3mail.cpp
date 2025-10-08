@@ -450,30 +450,28 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, Plat
                 bool32 WasDown = ((Message.lParam & (1 << 30)) != 0);
                 bool32 IsDown = ((Message.lParam & (1 << 31)) == 0);
                 
-                if(WasDown != IsDown)
+                //if(WasDown != IsDown)
+                if(gamecode->is_valid && IsDown && gamecode->HandleKeyPress)
                 {
-                    if(gamecode->is_valid && IsDown && gamecode->HandleKeyPress)
+                    gamecode->HandleKeyPress(GameState, VKCode, platform, Memory);
+                }
+                
+                if(VKCode == VK_ESCAPE)
+                {
+                    PostQuitMessage(0);
+                }
+                
+                if(IsDown)
+                {
+                    bool32 AltKeyWasDown = (Message.lParam & (1 << 29));
+                    if((VKCode == VK_F4) && AltKeyWasDown)
                     {
-                        gamecode->HandleKeyPress(GameState, VKCode, platform, Memory);
+                        GlobalRunning = false;
                     }
-                    
-                    if(VKCode == VK_ESCAPE)
+                    if((VKCode == VK_RETURN) && AltKeyWasDown)
                     {
-                        PostQuitMessage(0);
-                    }
-                    
-                    if(IsDown)
-                    {
-                        bool32 AltKeyWasDown = (Message.lParam & (1 << 29));
-                        if((VKCode == VK_F4) && AltKeyWasDown)
+                        if(Message.hwnd)
                         {
-                            GlobalRunning = false;
-                        }
-                        if((VKCode == VK_RETURN) && AltKeyWasDown)
-                        {
-                            if(Message.hwnd)
-                            {
-                            }
                         }
                     }
                 }
