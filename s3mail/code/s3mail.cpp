@@ -509,6 +509,8 @@ void RenderReplyContent(EmailContent* email, game_state* GameState)
     SetColor(0.0f, 0.0f, 0.0f);
     DrawRectOutline(email->x, email->y, email->width, email->height);
     
+    
+    
     if(GameState->email_content[0] == '\0')
     {
         SetColor(1.0f, 0.0f, 0.0f); // Red text for debug
@@ -517,6 +519,16 @@ void RenderReplyContent(EmailContent* email, game_state* GameState)
     }
     else
     {
+        // Recipients
+        GameState->recipient_list.x_ratio = 0.1346f;
+        GameState->recipient_list.y_ratio = 0.7731f;
+        GameState->recipient_list.width_ratio = 0.85f;
+        GameState->recipient_list.height_ratio = 0.0278f;
+        strncpy(GameState->recipient_list.text, GameState->email_array->from,
+                sizeof(GameState->email_array->from));
+        //GameState->recipient_list.is_hovered = 0;
+        //GameState->recipient_list.is_pressed = 0;
+        
         // Draw email content within the content area
         SetColor(0.0f, 0.0f, 0.0f);
         
@@ -613,6 +625,7 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->contact_list.item_count = 4;
         GameState->contact_list.selected_item = -1;
         
+        // body showing list of emails
         GameState->email_list.x_ratio = 0.1146f;
         GameState->email_list.y_ratio= 0.039f;
         GameState->email_list.width_ratio = 0.87f;
@@ -623,6 +636,17 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->email.width_ratio = 0.87f;
         GameState->email.height_ratio = 0.721f;
         GameState->email.scroll_offset = 0;
+        
+        // To
+        GameState->to_button.x_ratio = 0.1146f;
+        GameState->to_button.y_ratio = 0.7731f;
+        GameState->to_button.width_ratio = 0.022f;
+        GameState->to_button.height_ratio = 0.0278f;
+        strncpy(GameState->to_button.text,
+                "To:", ArrayCount(GameState->to_button.text));
+        GameState->to_button.is_hovered = 0;
+        GameState->to_button.is_pressed = 0;
+        
         
         // NOTE(trist007): testing Email headers display
         for(int i = 0;
@@ -702,6 +726,8 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
         
         case MODE_REPLYING_EMAIL:
         {
+            RenderButtonRatio(&GameState->to_button, GameState);
+            RenderButtonRatio(&GameState->recipient_list, GameState);
             RenderReplyContent(&GameState->email, GameState);
         } break;
     }
@@ -1034,9 +1060,10 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
         {
             switch (key_code)
             {
-                case 'J':
+                // go back to reading email
+                case 'I':
                 {
-                    
+                    GameState->current_mode = MODE_READING_EMAIL;
                 } break;
             }
         } break;

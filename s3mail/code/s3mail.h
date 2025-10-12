@@ -97,10 +97,12 @@ struct game_state
     // UI elements
     UIButtonRatio compose_button;
     UIButtonRatio delete_button;
+    UIButtonRatio to_button;
     UIListRatio folder_list;
     UIListRatio email_list;
     UIListRatio contact_list;
     EmailContent email;
+    UIButtonRatio recipient_list;
     
     // font
     GLuint font_texture_id;
