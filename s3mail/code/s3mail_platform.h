@@ -148,6 +148,9 @@ typedef struct {
     int (*ListFilesInDirectory)(char *directory, EmailMetadata **email_array);
     DWORD (*GetCurrentWorkingDirectory)(char *dir);
     
+    // Input helpers
+    bool32 (*IsKeyPressed)(int vk_code);
+    
     // Game state
     game_state *GameState;
     HWND Window;

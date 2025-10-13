@@ -85,6 +85,17 @@ struct EmailMetadata
 struct Win32ProcessHandle;
 struct thread_context;
 
+// text input struct
+struct text_input
+{
+    char buffer[4096];
+    int cursor_position;
+    int buffer_length;
+    bool32 is_active;
+    real32 blink_timer;
+    bool32 cursor_visible;
+};
+
 // Game state that persists across DLL reloads
 struct game_state
 {
@@ -119,6 +130,10 @@ struct game_state
     char email_content[256000];
     char parsed_email[1000][256];
     int32 line_count;
+    
+    // text input for compose and reply
+    text_input reply_body;
+    text_input compose_body;
     
     // Memory
     uint64 TotalSize;

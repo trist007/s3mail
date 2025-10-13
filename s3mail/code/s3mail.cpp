@@ -572,6 +572,35 @@ void RenderReplyContent(EmailContent* email, game_state* GameState)
     }
 }
 
+void RenderTextInput(game_state* GameState, float x, float y, float width, float height)
+{
+    // Draw background
+    SetColor(1.0f, 1.0f, 1.0f);
+    DrawRect(x, y, width, height);
+    
+    // Draw border
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawRectOutline(x, y, width, height);
+    
+    // Draw text
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawTextGameEmail(GameState, GameState->reply_body.buffer, x + 5, y + height - 25);
+    
+    // Draw cursor if active
+    if (GameState->reply_body.is_active && GameState->reply_body.cursor_visible)
+    {
+        // Calculate cursor position based on character width
+        float cursor_x = x + 5;
+        for (int i = 0; i < GameState->reply_body.cursor_position; i++)
+        {
+            cursor_x += 8; // Approximate character width - adjust as needed
+        }
+        
+        SetColor(0.0f, 0.0f, 0.0f);
+        DrawRect(cursor_x, y + height - 25, 2, 20); // Vertical cursor line
+    }
+}
+
 __declspec(dllexport)
 GAME_INITIALIZE_UI(GameInitializeUI)
 {
@@ -647,6 +676,13 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->to_button.is_hovered = 0;
         GameState->to_button.is_pressed = 0;
         
+        // Reply text input
+        GameState->reply_body.buffer[0] = '\0';
+        GameState->reply_body.cursor_position = 0;
+        GameState->reply_body.buffer_length = 0;
+        GameState->reply_body.is_active = 0;
+        GameState->reply_body.blink_timer = 0.0f;
+        GameState->reply_body.cursor_visible = 1;
         
         // NOTE(trist007): testing Email headers display
         for(int i = 0;
@@ -667,7 +703,8 @@ GAME_INITIALIZE_UI(GameInitializeUI)
 
 // Main game functions that get hot reloaded
 __declspec(dllexport)
-GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
+GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
+{
     
     // Draw purple header stripe - try changing this color and recompiling!
     SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
@@ -699,7 +736,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
         
         case MODE_REPLYING_EMAIL:
         {
-            UpdateReplyEmail(&GameState->email, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
+            //UpdateReplyEmail(&GameState->email, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
         }
     }
     
@@ -726,9 +763,26 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender) {
         
         case MODE_REPLYING_EMAIL:
         {
+            // Update cursor blink, assuming 60 fps
+            GameState->reply_body.blink_timer += 0.016f;
+            if(GameState->reply_body.blink_timer > 0.5f)
+            {
+                GameState->reply_body.cursor_visible = !GameState->reply_body.cursor_visible;
+                
+                GameState->reply_body.blink_timer = 0.0f;
+            }
+            
             RenderButtonRatio(&GameState->to_button, GameState);
             RenderButtonRatio(&GameState->recipient_list, GameState);
-            RenderReplyContent(&GameState->email, GameState);
+            
+            // Render the reply composition
+            RenderTextInput(GameState,
+                            0.1146f * WINDOW_WIDTH_HD,
+                            0.4f * WINDOW_HEIGHT_HD,
+                            0.87f * WINDOW_WIDTH_HD,
+                            0.35f * WINDOW_HEIGHT_HD);
+            
+            //RenderReplyContent(&GameState->email, GameState);
         } break;
     }
     
@@ -1058,13 +1112,105 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
         } break;
         case MODE_REPLYING_EMAIL:
         {
-            switch (key_code)
+            // Activate text input when user starts typing
+            // all printable chars in ASCII
+            if(!GameState->reply_body.is_active &&
+               (key_code >= ' ' && key_code <= '~'))
             {
-                // go back to reading email
-                case 'I':
+                GameState->reply_body.is_active = 1;
+            }
+            
+            if(GameState->reply_body.is_active)
+            {
+                switch (key_code)
                 {
-                    GameState->current_mode = MODE_READING_EMAIL;
-                } break;
+                    // Backspace
+                    case VK_BACK:
+                    {
+                        // Remove character before cursor
+                        memmove(&GameState->reply_body.buffer[GameState->reply_body.cursor_position - 1],
+                                &GameState->reply_body.buffer[GameState->reply_body.cursor_position],
+                                GameState->reply_body.buffer_length -
+                                GameState->reply_body.cursor_position + 1);
+                        
+                        GameState->reply_body.buffer[GameState->reply_body.cursor_position]
+                            = '\n';
+                        GameState->reply_body.cursor_position++;
+                        GameState->reply_body.buffer_length++;
+                    } break;
+                    
+                    case VK_LEFT:
+                    {
+                        if(GameState->reply_body.cursor_position > 0)
+                        {
+                            GameState->reply_body.cursor_position--;
+                        }
+                    } break;
+                    
+                    case VK_RIGHT:
+                    {
+                        if(GameState->reply_body.cursor_position < GameState->reply_body.buffer_length)
+                        {
+                            GameState->reply_body.cursor_position++;
+                        }
+                    } break;
+                    
+                    // exit text input mode
+                    case VK_ESCAPE:
+                    {
+                        GameState->reply_body.is_active = 0;
+                        GameState->current_mode = MODE_READING_EMAIL;
+                    } break;
+                    
+                    default:
+                    {
+                        // handle regular char input
+                        if(GameState->reply_body.buffer_length < sizeof(GameState->reply_body.buffer)- 1)
+                        {
+                            char c = 0;
+                            
+                            // convert key code to char
+                            if(key_code >= ' ' && key_code <= '~')
+                            {
+                                
+                                // Check if shift is held for uppercase
+                                // GetKeyState() returns a SHORT (16-bit value) where:
+                                // Bit 15 (0x8000) = key is currently pressed DOWN
+                                bool32 shift_held = platform->IsKeyPressed(VK_SHIFT);
+                                
+                                // Convert to uppercase
+                                c = shift_held ? key_code : (key_code + 32);
+                            }
+                            else if(key_code == VK_SPACE)
+                            {
+                                c = ' ';
+                            }
+                            
+                            if(c != 0)
+                            {
+                                // Insert character at cursor position
+                                memmove(&GameState->reply_body.buffer[GameState->reply_body.cursor_position + 1],
+                                        &GameState->reply_body.buffer[GameState->reply_body.cursor_position],
+                                        GameState->reply_body.buffer_length - GameState->reply_body.cursor_position + 1);
+                                
+                                GameState->reply_body.buffer[GameState->reply_body.cursor_position] = c;
+                                GameState->reply_body.cursor_position++;
+                                GameState->reply_body.buffer_length++;
+                            }
+                        }
+                    } break;
+                }
+            }
+            else
+            {
+                switch(key_code)
+                {
+                    // Go back to reading email
+                    case 'I':
+                    {
+                        GameState->current_mode = MODE_READING_EMAIL;
+                    } break;
+                }
             }
         } break;
     }

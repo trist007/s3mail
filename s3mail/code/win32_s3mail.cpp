@@ -293,6 +293,12 @@ Win32GetCurrentWorkingDirectory(char *dir)
     return(result);
 }
 
+internal bool32
+Win32IsKeyPressed(int vk_code)
+{
+    return (GetAsyncKeyState(vk_code) & 0x8000) != 0;
+}
+
 internal int
 Win32ListFilesInDirectory(char *directory, EmailMetadata **email_array)
 {
@@ -656,6 +662,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.ReadProcessOutput = Win32ReadProcessOutput;
     win32.ListFilesInDirectory = Win32ListFilesInDirectory;
     win32.GetCurrentWorkingDirectory = Win32GetCurrentWorkingDirectory;
+    win32.IsKeyPressed = Win32IsKeyPressed;
     win32.GameState = GameState;
     win32.Window = Window;
     
