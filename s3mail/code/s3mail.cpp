@@ -593,7 +593,15 @@ void RenderTextInput(game_state* GameState, float x, float y, float width, float
         float cursor_x = x + 5;
         for (int i = 0; i < GameState->reply_body.cursor_position; i++)
         {
-            cursor_x += 8; // Approximate character width - adjust as needed
+            char c = GameState->reply_body.buffer[i];
+            
+            // printable ascii range baked in stb truetype
+            if(c >= 32 && c < 128)
+            {
+                stbtt_bakedchar *b = &GameState->cdata[c - 32];
+                cursor_x += b->xadvance;
+            }
+            //cursor_x += 8; // Approximate character width - adjust as needed
         }
         
         SetColor(0.0f, 0.0f, 0.0f);
@@ -1133,10 +1141,10 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                                 GameState->reply_body.buffer_length -
                                 GameState->reply_body.cursor_position + 1);
                         
-                        GameState->reply_body.buffer[GameState->reply_body.cursor_position]
-                            = '\n';
-                        GameState->reply_body.cursor_position++;
-                        GameState->reply_body.buffer_length++;
+                        //GameState->reply_body.buffer[GameState->reply_body.cursor_position]
+                        //= '\n';
+                        GameState->reply_body.cursor_position--;
+                        GameState->reply_body.buffer_length--;
                     } break;
                     
                     case VK_LEFT:
@@ -1170,7 +1178,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                             char c = 0;
                             
                             // convert key code to char
-                            if(key_code >= ' ' && key_code <= '~')
+                            if(key_code >= 'A' && key_code <= 'Z')
                             {
                                 
                                 // Check if shift is held for uppercase
@@ -1180,10 +1188,11 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                                 
                                 // Convert to uppercase
                                 c = shift_held ? key_code : (key_code + 32);
+                                
                             }
-                            else if(key_code == VK_SPACE)
+                            else if(key_code >= ' ' && key_code <= '~')
                             {
-                                c = ' ';
+                                c = (char)key_code;
                             }
                             
                             if(c != 0)
