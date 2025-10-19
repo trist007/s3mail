@@ -81,7 +81,7 @@ DrawTextGameEmail(game_state *GameState, const char *text, float x, float y)
         {
             // Handle newline
             current_x = x;  // reset to start of line
-            current_y -= line_height;   // move down one line
+            current_y += line_height;   // move down one line
             
             // ski; \r\n combinations
             if(text[i] == '\r' && text[i+1] == '\n')
@@ -572,7 +572,39 @@ void RenderReplyContent(EmailContent* email, game_state* GameState)
     }
 }
 
-void RenderTextInput(game_state* GameState, float x, float y, float width, float height)
+// Helper function to calculate character position after rendering n chars
+void
+CalculateTextPosition(game_state* GameState, char *text, int char_count, float start_x,
+                      float start_y, float *out_x, float *out_y)
+{
+    float current_x = start_x;
+    float current_y = start_y;
+    float line_height = 30.0f;
+    
+    for(int i = 0;
+        i < char_count && text[i];
+        i++)
+    {
+        char c = text[i];
+        
+        if(c == '\n')
+        {
+            current_x = start_x;
+            current_y -= line_height;
+        }
+        else if(c >= 32 && c < 128)
+        {
+            stbtt_bakedchar *b = &GameState->cdata[c - 32];
+            current_x += b->xadvance;
+        }
+    }
+    
+    *out_x = current_x;
+    *out_y = current_y;
+}
+
+void
+RenderTextInput(game_state* GameState, float x, float y, float width, float height)
 {
     // Draw background
     SetColor(1.0f, 1.0f, 1.0f);
@@ -584,28 +616,48 @@ void RenderTextInput(game_state* GameState, float x, float y, float width, float
     
     // Draw text
     SetColor(0.0f, 0.0f, 0.0f);
-    DrawTextGameEmail(GameState, GameState->reply_body.buffer, x + 5, y + height - 25);
+    //DrawTextGameEmail(GameState, GameState->reply_body.buffer, x + 5, y + height - 25);
+    
+    float text_start_x = x + 5;
+    float text_start_y = y + height - 25;
+    DrawTextGameEmail(GameState, GameState->reply_body.buffer, text_start_x, text_start_y);
     
     // Draw cursor if active
     if (GameState->reply_body.is_active && GameState->reply_body.cursor_visible)
     {
+        float cursor_x, cursor_y;
+        CalculateTextPosition(GameState, GameState->reply_body.buffer,
+                              GameState->reply_body.cursor_position,
+                              text_start_x, text_start_y,
+                              &cursor_x, &cursor_y);
+        /*
         // Calculate cursor position based on character width
         float cursor_x = x + 5;
+        float cursor_y = y + height - 25;
+        float line_height = 30.0f; // match drawtextgameemail's height
+        
         for (int i = 0; i < GameState->reply_body.cursor_position; i++)
         {
             char c = GameState->reply_body.buffer[i];
             
+            if(c == '\n')
+            {
+                // move to the next line
+                cursor_x = x + 5;
+                cursor_y -= line_height; //move down
+            }
+            
             // printable ascii range baked in stb truetype
-            if(c >= 32 && c < 128)
+            else if(c >= 32 && c < 128)
             {
                 stbtt_bakedchar *b = &GameState->cdata[c - 32];
                 cursor_x += b->xadvance;
             }
             //cursor_x += 8; // Approximate character width - adjust as needed
         }
-        
+        */
         SetColor(0.0f, 0.0f, 0.0f);
-        DrawRect(cursor_x, y + height - 25, 2, 20); // Vertical cursor line
+        DrawRect(cursor_x, cursor_y, 2, 20); // Vertical cursor line
     }
 }
 
@@ -1101,7 +1153,6 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 {
                     // code for forwarding email
                 } break;
-                
                 // reply email
                 case 'R':
                 {
@@ -1123,7 +1174,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
             // Activate text input when user starts typing
             // all printable chars in ASCII
             if(!GameState->reply_body.is_active &&
-               (key_code >= ' ' && key_code <= '~'))
+               (key_code >= 32 && key_code < 128))
             {
                 GameState->reply_body.is_active = 1;
             }
@@ -1163,6 +1214,21 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         }
                     } break;
                     
+                    
+                    case VK_RETURN:
+                    {
+                        if(GameState->reply_body.buffer_length < sizeof(GameState->reply_body.buffer) - 1)
+                        {
+                            memmove(&GameState->reply_body.buffer[GameState->reply_body.cursor_position + 1],
+                                    &GameState->reply_body.buffer[GameState->reply_body.cursor_position],
+                                    GameState->reply_body.buffer_length - GameState->reply_body.cursor_position + 1);
+                            
+                            GameState->reply_body.buffer[GameState->reply_body.cursor_position] = '\n';
+                            GameState->reply_body.cursor_position++;
+                            GameState->reply_body.buffer_length++;
+                        }
+                    } break;
+                    
                     // exit text input mode
                     case VK_ESCAPE:
                     {
@@ -1173,24 +1239,66 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     default:
                     {
                         // handle regular char input
-                        if(GameState->reply_body.buffer_length < sizeof(GameState->reply_body.buffer)- 1)
+                        if(GameState->reply_body.buffer_length < sizeof(GameState->reply_body.buffer) - 1)
                         {
                             char c = 0;
+                            bool32 shift_held = platform->IsKeyPressed(VK_SHIFT);
                             
-                            // convert key code to char
+                            
+                            // Handle letters
                             if(key_code >= 'A' && key_code <= 'Z')
                             {
-                                
-                                // Check if shift is held for uppercase
-                                // GetKeyState() returns a SHORT (16-bit value) where:
-                                // Bit 15 (0x8000) = key is currently pressed DOWN
-                                bool32 shift_held = platform->IsKeyPressed(VK_SHIFT);
-                                
-                                // Convert to uppercase
                                 c = shift_held ? key_code : (key_code + 32);
-                                
                             }
-                            else if(key_code >= ' ' && key_code <= '~')
+                            
+                            // Handle all other printable chars (including space)
+                            else if(key_code >= '0' && key_code <= '9')
+                            {
+                                // Handle shift+number for symbols like !, @, #, etc.
+                                if(shift_held)
+                                {
+                                    const char shift_numbers[] = ")!@#$%^&*(";
+                                    c = shift_numbers[key_code - '0'];
+                                }
+                                else
+                                {
+                                    c = (char)key_code;
+                                }
+                            }
+                            
+                            // Handle space and other directly mapped keys
+                            else if(key_code == VK_SPACE)
+                            {
+                                c = ' ';
+                            }
+                            
+                            // Handle OEM keys
+                            else if(key_code == VK_OEM_MINUS)  // minus/underscore key
+                            {
+                                c = shift_held ? '_' : '-';
+                            }
+                            
+                            else if(key_code == VK_OEM_PLUS)   // equals/plus key
+                            {
+                                c = shift_held ? '+' : '=';
+                            }
+                            
+                            else if(key_code == VK_OEM_COMMA)
+                            {
+                                c = shift_held ? '<' : ',';
+                            }
+                            
+                            else if(key_code == VK_OEM_PERIOD)
+                            {
+                                c = shift_held ? '>' : '.';
+                            }
+                            
+                            else if(key_code == VK_OEM_2)  // forward slash/question mark
+                            {
+                                c = shift_held ? '?' : '/';
+                            }
+                            
+                            else if(key_code >= 32 && key_code < 128)
                             {
                                 c = (char)key_code;
                             }
