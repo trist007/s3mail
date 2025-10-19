@@ -1241,76 +1241,83 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         // handle regular char input
                         if(GameState->reply_body.buffer_length < sizeof(GameState->reply_body.buffer) - 1)
                         {
-                            char c = 0;
-                            bool32 shift_held = platform->IsKeyPressed(VK_SHIFT);
+                            key_translation key = platform->KeyCodeToChar(key_code);
                             
-                            
-                            // Handle letters
-                            if(key_code >= 'A' && key_code <= 'Z')
+                            if(key.valid)
                             {
-                                c = shift_held ? key_code : (key_code + 32);
-                            }
-                            
-                            // Handle all other printable chars (including space)
-                            else if(key_code >= '0' && key_code <= '9')
-                            {
-                                // Handle shift+number for symbols like !, @, #, etc.
-                                if(shift_held)
+                                
+                                /*
+    char c = 0;
+                                bool32 shift_held = platform->IsKeyPressed(VK_SHIFT);
+                                
+                                
+                                // Handle letters
+                                if(key_code >= 'A' && key_code <= 'Z')
                                 {
-                                    const char shift_numbers[] = ")!@#$%^&*(";
-                                    c = shift_numbers[key_code - '0'];
+                                    c = shift_held ? key_code : (key_code + 32);
                                 }
-                                else
+                                
+                                // Handle all other printable chars (including space)
+                                else if(key_code >= '0' && key_code <= '9')
+                                {
+                                    // Handle shift+number for symbols like !, @, #, etc.
+                                    if(shift_held)
+                                    {
+                                        const char shift_numbers[] = ")!@#$%^&*(";
+                                        c = shift_numbers[key_code - '0'];
+                                    }
+                                    else
+                                    {
+                                        c = (char)key_code;
+                                    }
+                                }
+                                
+                                // Handle space and other directly mapped keys
+                                else if(key_code == VK_SPACE)
+                                {
+                                    c = ' ';
+                                }
+                                
+                                // Handle OEM keys
+                                else if(key_code == VK_OEM_MINUS)  // minus/underscore key
+                                {
+                                    c = shift_held ? '_' : '-';
+                                }
+                                
+                                else if(key_code == VK_OEM_PLUS)   // equals/plus key
+                                {
+                                    c = shift_held ? '+' : '=';
+                                }
+                                
+                                else if(key_code == VK_OEM_COMMA)
+                                {
+                                    c = shift_held ? '<' : ',';
+                                }
+                                
+                                else if(key_code == VK_OEM_PERIOD)
+                                {
+                                    c = shift_held ? '>' : '.';
+                                }
+                                
+                                else if(key_code == VK_OEM_2)  // forward slash/question mark
+                                {
+                                    c = shift_held ? '?' : '/';
+                                }
+                                
+                                else if(key_code >= 32 && key_code < 128)
                                 {
                                     c = (char)key_code;
                                 }
-                            }
-                            
-                            // Handle space and other directly mapped keys
-                            else if(key_code == VK_SPACE)
-                            {
-                                c = ' ';
-                            }
-                            
-                            // Handle OEM keys
-                            else if(key_code == VK_OEM_MINUS)  // minus/underscore key
-                            {
-                                c = shift_held ? '_' : '-';
-                            }
-                            
-                            else if(key_code == VK_OEM_PLUS)   // equals/plus key
-                            {
-                                c = shift_held ? '+' : '=';
-                            }
-                            
-                            else if(key_code == VK_OEM_COMMA)
-                            {
-                                c = shift_held ? '<' : ',';
-                            }
-                            
-                            else if(key_code == VK_OEM_PERIOD)
-                            {
-                                c = shift_held ? '>' : '.';
-                            }
-                            
-                            else if(key_code == VK_OEM_2)  // forward slash/question mark
-                            {
-                                c = shift_held ? '?' : '/';
-                            }
-                            
-                            else if(key_code >= 32 && key_code < 128)
-                            {
-                                c = (char)key_code;
-                            }
-                            
-                            if(c != 0)
-                            {
+                                
+                                if(c != 0)
+                                {
+                                    */
                                 // Insert character at cursor position
                                 memmove(&GameState->reply_body.buffer[GameState->reply_body.cursor_position + 1],
                                         &GameState->reply_body.buffer[GameState->reply_body.cursor_position],
                                         GameState->reply_body.buffer_length - GameState->reply_body.cursor_position + 1);
                                 
-                                GameState->reply_body.buffer[GameState->reply_body.cursor_position] = c;
+                                GameState->reply_body.buffer[GameState->reply_body.cursor_position] = key.character;
                                 GameState->reply_body.cursor_position++;
                                 GameState->reply_body.buffer_length++;
                             }

@@ -299,6 +299,72 @@ Win32IsKeyPressed(int vk_code)
     return (GetAsyncKeyState(vk_code) & 0x8000) != 0;
 }
 
+key_translation
+Win32KeyCodeToChar(int key_code)
+{
+    key_translation result = {};
+    
+    bool32 shift_held = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+    
+    // Handle letters
+    if(key_code >= 'A' && key_code <= 'Z')
+    {
+        result.character = shift_held ? key_code : (key_code + 32);
+        result.valid = true;
+    }
+    // Handle numbers
+    else if(key_code >= '0' && key_code <= '9')
+    {
+        if(shift_held)
+        {
+            const char shift_numbers[] = ")!@#$%^&*(";
+            result.character = shift_numbers[key_code - '0'];
+        }
+        else
+        {
+            result.character = (char)key_code;
+        }
+        result.valid = true;
+    }
+    // Handle space
+    else if(key_code == VK_SPACE)
+    {
+        result.character = ' ';
+        result.valid = true;
+    }
+    // Handle OEM keys
+    else if(key_code == VK_OEM_MINUS)
+    {
+        result.character = shift_held ? '_' : '-';
+        result.valid = true;
+    }
+    else if(key_code == VK_OEM_PLUS)
+    {
+        result.character = shift_held ? '+' : '=';
+        result.valid = true;
+    }
+    
+    else if(key_code == VK_OEM_COMMA)
+    {
+        result.character = shift_held ? '<' : ',';
+        result.valid = true;
+    }
+    
+    else if(key_code == VK_OEM_PERIOD)
+    {
+        result.character = shift_held ? '>' : '.';
+        result.valid = true;
+    }
+    
+    else if(key_code == VK_OEM_2)  // forward slash/question mark
+    {
+        result.character = shift_held ? '?' : '/';
+        result.valid = true;
+    }
+    
+    return(result);
+}
+
 internal int
 Win32ListFilesInDirectory(char *directory, EmailMetadata **email_array)
 {
@@ -663,6 +729,7 @@ WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdS
     win32.ListFilesInDirectory = Win32ListFilesInDirectory;
     win32.GetCurrentWorkingDirectory = Win32GetCurrentWorkingDirectory;
     win32.IsKeyPressed = Win32IsKeyPressed;
+    win32.KeyCodeToChar = Win32KeyCodeToChar;
     win32.GameState = GameState;
     win32.Window = Window;
     

@@ -68,6 +68,15 @@ SafeTruncateUInt64(uint64 Value)
     return(Result);
 }
 
+// KeyCode Translation
+typedef struct key_translation
+{
+    char character;
+    bool32 valid;
+} key_translation;
+
+//typedef KEY_CODE_TO_CHAR(KeyCodeToChar);
+
 // Process struct for awscli
 struct Win32ProcessHandle
 {
@@ -150,6 +159,7 @@ typedef struct {
     
     // Input helpers
     bool32 (*IsKeyPressed)(int vk_code);
+    key_translation (*KeyCodeToChar)(int key_code);
     
     // Game state
     game_state *GameState;
