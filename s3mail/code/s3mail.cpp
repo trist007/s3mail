@@ -548,12 +548,6 @@ RenderReplyContent(EmailContent* email, game_state* GameState)
         int render_start_line;
         int render_end_line;
         
-        /*
-        int lines_to_show = 30;
-        int start_line = email->scroll_offset;
-        int end_line = min(start_line + lines_to_show, email->item_count);
-*/
-        
         if(GameState->email_array->showHeaders)
         {
             render_start_line = 0;
@@ -643,32 +637,7 @@ RenderTextInput(game_state* GameState, float x, float y, float width, float heig
                               GameState->reply_body.cursor_position,
                               text_start_x, text_start_y,
                               &cursor_x, &cursor_y);
-        /*
-        // Calculate cursor position based on character width
-        float cursor_x = x + 5;
-        float cursor_y = y + height - 25;
-        float line_height = 30.0f; // match drawtextgameemail's height
         
-        for (int i = 0; i < GameState->reply_body.cursor_position; i++)
-        {
-            char c = GameState->reply_body.buffer[i];
-            
-            if(c == '\n')
-            {
-                // move to the next line
-                cursor_x = x + 5;
-                cursor_y -= line_height; //move down
-            }
-            
-            // printable ascii range baked in stb truetype
-            else if(c >= 32 && c < 128)
-            {
-                stbtt_bakedchar *b = &GameState->cdata[c - 32];
-                cursor_x += b->xadvance;
-            }
-            //cursor_x += 8; // Approximate character width - adjust as needed
-        }
-        */
         SetColor(0.0f, 0.0f, 0.0f);
         DrawRect(cursor_x, cursor_y, 2, 20); // Vertical cursor line
     }
@@ -781,7 +750,6 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
     
     // Draw purple header stripe - try changing this color and recompiling!
     SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
-    //DrawRect(0, 0.8102f, 1.0f, 0.1852f);
     DrawRectRatio(0.0f, 0.8102f, 1.0f, 0.1852f);
     
     SetColor(0.0f, 0.0f, 0.0f);
