@@ -83,7 +83,7 @@ DrawTextGameEmail(game_state *GameState, const char *text, float x, float y)
             current_x = x;  // reset to start of line
             current_y += line_height;   // move down one line
             
-            // ski; \r\n combinations
+            // skip \r\n combinations
             if(text[i] == '\r' && text[i+1] == '\n')
             {
                 i++;  // skip to next newline
@@ -184,7 +184,8 @@ PointInRect(int px, int py, float x, float y, float width, float height)
 }
 
 // UI update functions
-void UpdateButtonRatio(UIButtonRatio* btn, int mouse_x, int mouse_y, int mouse_down, int window_height)
+void
+UpdateButtonRatio(UIButtonRatio* btn, int mouse_x, int mouse_y, int mouse_down, int window_height)
 {
     
     btn->x = WINDOW_WIDTH_HD * btn->x_ratio;
@@ -197,7 +198,8 @@ void UpdateButtonRatio(UIButtonRatio* btn, int mouse_x, int mouse_y, int mouse_d
     btn->is_pressed = btn->is_hovered && mouse_down;
 }
 
-void UpdateButton(UIButton* btn, int mouse_x, int mouse_y, int mouse_down, int window_height)
+void
+UpdateButton(UIButton* btn, int mouse_x, int mouse_y, int mouse_down, int window_height)
 {
     
     int gl_y = window_height - mouse_y;
@@ -205,7 +207,8 @@ void UpdateButton(UIButton* btn, int mouse_x, int mouse_y, int mouse_down, int w
     btn->is_pressed = btn->is_hovered && mouse_down;
 }
 
-void RenderButtonRatio(UIButtonRatio* btn, game_state *GameState)
+void
+RenderButtonRatio(UIButtonRatio* btn, game_state *GameState)
 {
     if (btn->is_pressed) {
         SetColor(0.2f, 0.2f, 0.6f);
@@ -229,7 +232,8 @@ void RenderButtonRatio(UIButtonRatio* btn, game_state *GameState)
     DrawTextGame(GameState, btn->text, btn->x + 5, btn->y + 8);
 }
 
-void RenderButton(UIButton* btn, game_state* GameState)
+void
+RenderButton(UIButton* btn, game_state* GameState)
 {
     if (btn->is_pressed) {
         SetColor(0.2f, 0.2f, 0.6f);
@@ -248,7 +252,8 @@ void RenderButton(UIButton* btn, game_state* GameState)
     DrawTextGame(GameState, btn->text, btn->x + 5, btn->y + 8);
 }
 
-void UpdateListRatio(UIListRatio* list, int mouse_x, int mouse_y, int mouse_down, int window_height)
+void
+UpdateListRatio(UIListRatio* list, int mouse_x, int mouse_y, int mouse_down, int window_height)
 {
     int gl_y = window_height - mouse_y;
     
@@ -266,7 +271,8 @@ void UpdateListRatio(UIListRatio* list, int mouse_x, int mouse_y, int mouse_down
     }
 }
 
-void UpdateList(UIList* list, int mouse_x, int mouse_y, int mouse_down, int window_height)
+void
+UpdateList(UIList* list, int mouse_x, int mouse_y, int mouse_down, int window_height)
 {
     int gl_y = window_height - mouse_y;
     
@@ -280,7 +286,8 @@ void UpdateList(UIList* list, int mouse_x, int mouse_y, int mouse_down, int wind
     }
 }
 
-void UpdateEmailContent(EmailContent* email, int mouse_x, int mouse_y, int mouse_down, int window_height)
+void
+UpdateEmailContent(EmailContent* email, int mouse_x, int mouse_y, int mouse_down, int window_height)
 {
     int gl_y = window_height - mouse_y;
     
@@ -299,7 +306,8 @@ void UpdateEmailContent(EmailContent* email, int mouse_x, int mouse_y, int mouse
     
 }
 
-void UpdateReplyEmail(EmailContent* email, int mouse_x, int mouse_y, int mouse_down, int window_height)
+void
+UpdateReplyEmail(EmailContent* email, int mouse_x, int mouse_y, int mouse_down, int window_height)
 {
     int gl_y = window_height - mouse_y;
     
@@ -318,7 +326,8 @@ void UpdateReplyEmail(EmailContent* email, int mouse_x, int mouse_y, int mouse_d
     
 }
 
-void RenderListRatio(UIListRatio* list, game_state* GameState)
+void
+RenderListRatio(UIListRatio* list, game_state* GameState)
 {
     
     list->x = WINDOW_WIDTH_HD * list->x_ratio;
@@ -352,7 +361,8 @@ void RenderListRatio(UIListRatio* list, game_state* GameState)
     }
 }
 
-void RenderList(UIList* list, game_state* GameState)
+void
+RenderList(UIList* list, game_state* GameState)
 {
     // Background
     SetColor(0.9f, 0.9f, 0.9f);
@@ -380,7 +390,8 @@ void RenderList(UIList* list, game_state* GameState)
     }
 }
 
-void RenderListWithHeader(UIListRatio* list, game_state* GameState)
+void
+RenderListWithHeader(UIListRatio* list, game_state* GameState)
 {
     
     list->x = WINDOW_WIDTH_HD * list->x_ratio;
@@ -426,7 +437,8 @@ void RenderListWithHeader(UIListRatio* list, game_state* GameState)
     }
 }
 
-void RenderEmailContent(EmailContent* email, game_state* GameState)
+void
+RenderEmailContent(EmailContent* email, game_state* GameState)
 {
     
     email->x = WINDOW_WIDTH_HD * email->x_ratio;
@@ -493,7 +505,8 @@ void RenderEmailContent(EmailContent* email, game_state* GameState)
     }
 }
 
-void RenderReplyContent(EmailContent* email, game_state* GameState)
+void
+RenderReplyContent(EmailContent* email, game_state* GameState)
 {
     
     email->x = WINDOW_WIDTH_HD * email->x_ratio;

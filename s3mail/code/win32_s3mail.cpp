@@ -528,10 +528,12 @@ Win32ProcessPendingMessages(Win32GameCode *gamecode, game_state *GameState, Plat
                     gamecode->HandleKeyPress(GameState, VKCode, platform, Memory);
                 }
                 
+                /*
                 if(VKCode == VK_ESCAPE)
                 {
                     PostQuitMessage(0);
                 }
+*/
                 
                 if(IsDown)
                 {
