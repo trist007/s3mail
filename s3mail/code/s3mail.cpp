@@ -548,6 +548,12 @@ RenderReplyContent(EmailContent* email, game_state* GameState)
         int render_start_line;
         int render_end_line;
         
+        /*
+        int lines_to_show = 30;
+        int start_line = email->scroll_offset;
+        int end_line = min(start_line + lines_to_show, email->item_count);
+*/
+        
         if(GameState->email_array->showHeaders)
         {
             render_start_line = 0;
@@ -637,7 +643,6 @@ RenderTextInput(game_state* GameState, float x, float y, float width, float heig
                               GameState->reply_body.cursor_position,
                               text_start_x, text_start_y,
                               &cursor_x, &cursor_y);
-        
         SetColor(0.0f, 0.0f, 0.0f);
         DrawRect(cursor_x, cursor_y, 2, 20); // Vertical cursor line
     }
@@ -750,6 +755,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
     
     // Draw purple header stripe - try changing this color and recompiling!
     SetColor(0.3f, 0.3f, 0.7f);  // Easy to experiment with colors now
+    //DrawRect(0, 0.8102f, 1.0f, 0.1852f);
     DrawRectRatio(0.0f, 0.8102f, 1.0f, 0.1852f);
     
     SetColor(0.0f, 0.0f, 0.0f);
@@ -981,7 +987,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     size_t copy_size = (Result.ContentsSize) <
                     (sizeof(GameState->email_content) - 1) ?
                         Result.ContentsSize : sizeof(GameState->email_content) - 1;
-*/
+                    */
                     
                     memmove(GameState->email_content, Result.Contents, Result.ContentsSize - 1);
                     GameState->email_content[Result.ContentsSize] = '\0';
@@ -1053,7 +1059,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         GameState->email.scroll_offset++;
                     }
                 } break;
-*/
+                */
                 case 'J':
                 {
                     int render_start_line = GameState->email_array->showHeaders ? 
@@ -1139,6 +1145,48 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 {
                     // code for reply email
                     GameState->current_mode = MODE_REPLYING_EMAIL;
+                    
+                    // pre-populate the reply buffer with the email thread
+                    char separator[] = "\n--------------------------------------------------\n";
+                    size_t separator_len = strlen(separator);
+                    
+                    // start with empty reply aread
+                    GameState->reply_body.buffer[0] = '\0';
+                    GameState->reply_body.buffer_length = 0;
+                    GameState->reply_body.cursor_position = 0;
+                    
+                    // add some blank lines for the user to type their response
+                    strcat(GameState->reply_body.buffer, "\n\n");
+                    GameState->reply_body.buffer_length = 2;
+                    GameState->reply_body.cursor_position = 0;
+                    
+                    // add separator
+                    strcat(GameState->reply_body.buffer, separator);
+                    GameState->reply_body.buffer_length += separator_len;
+                    
+                    // add original email content text/plain section only
+                    int start_line = GameState->email_array->textplain_start;
+                    int end_line = GameState->email_array->textplain_end;
+                    
+                    // copy the plain text content
+                    for(int i = start_line;
+                        i < end_line && GameState->reply_body.buffer_length < sizeof(GameState->reply_body.buffer) - 100;
+                        i++)
+                    {
+                        size_t line_len = strlen(GameState->parsed_email[i]);
+                        
+                        // check if we have room
+                        if(GameState->reply_body.buffer_length + line_len + 1 < sizeof(GameState->reply_body.buffer) - 1)
+                        {
+                            strcat(GameState->reply_body.buffer, GameState->parsed_email[i]);
+                            strcat(GameState->reply_body.buffer, "\n");
+                            GameState->reply_body.buffer_length += line_len + 1;
+                        }
+                    }
+                    
+                    // set cursor position to the beginning
+                    GameState->reply_body.cursor_position = 0;
+                    GameState->reply_body.is_active = 1;
                 } break;
                 
                 // go back to email_list

@@ -89,8 +89,9 @@ struct thread_context;
 struct text_input
 {
     char buffer[4096];
+    char email_thread[1000][256];
     int cursor_position;
-    int buffer_length;
+    size_t buffer_length;
     bool32 is_active;
     real32 blink_timer;
     bool32 cursor_visible;
