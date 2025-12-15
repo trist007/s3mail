@@ -1170,7 +1170,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     
                     // copy the plain text content
                     for(int i = start_line;
-                        i < end_line && GameState->reply_body.buffer_length < sizeof(GameState->reply_body.buffer) - 100;
+                        i < end_line;
                         i++)
                     {
                         size_t line_len = strlen(GameState->parsed_email[i]);
