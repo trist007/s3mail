@@ -1201,9 +1201,11 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
         case MODE_REPLYING_EMAIL:
         {
             // Activate text input when user starts typing
-            // all printable chars in ASCII
+            // all printable chars in ASCII except i (105) and y (121)
             if(!GameState->reply_body.is_active &&
-               (key_code >= 32 && key_code < 128))
+               (key_code >= 32 && key_code < 105) &&
+               (key_code >= 106 && key_code < 121) &&
+               (key_code >= 122 &&key_code < 128))
             {
                 GameState->reply_body.is_active = 1;
             }
@@ -1262,7 +1264,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     case VK_ESCAPE:
                     {
                         GameState->reply_body.is_active = 0;
-                        GameState->current_mode = MODE_READING_EMAIL;
+                        //GameState->current_mode = MODE_READING_EMAIL;
                     } break;
                     
                     default:
@@ -1358,10 +1360,22 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
             {
                 switch(key_code)
                 {
-                    // Go back to reading email
+                    // De-activate edit mode into command mode
                     case 'I':
                     {
                         GameState->current_mode = MODE_READING_EMAIL;
+                        
+                        // zero out reply_body.buffer
+                        memset(GameState->reply_body.buffer, 0, sizeof(GameState->reply_body.buffer));
+                        GameState->reply_body.buffer_length = 0;
+                        GameState->reply_body.cursor_position = 0;
+                        GameState->reply_body.buffer_length = 0;
+                    } break;
+                    
+                    // send email
+                    case 'Y':
+                    {
+                        // TODO(trist007): send email command
                     } break;
                 }
             }
