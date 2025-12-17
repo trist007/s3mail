@@ -975,7 +975,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 {
                     platform->ExecuteAWSCLI(GameState, "aws s3 sync s3://www.darkterminal.net/incoming/ C:/Users/Tristan/.email");
                     
-                    char* output_text = platform->ReadProcessOutput(&GameState->awscli->stdout_read);
+                    char* output_text = platform->ReadProcessOutput(&GameState->awscli.stdout_read);
                     if(output_text)
                     {
                         strncpy(GameState->aws_output_buffer, output_text, sizeof(GameState->aws_output_buffer) - 1);
@@ -1395,6 +1395,19 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     case 'Y':
                     {
                         // TODO(trist007): send email command
+                        /*
+                        platform->ExecuteAWSCLI(GameState, "aws ses send-email \
+                                                --from \"sender@example.com\" \
+                                                --destination \"ToAddresses=recipient1@example.com\" \
+                                                --message "Subject={Data='Test Subject',Charset='UTF-8'},Body={Text={Data='This is the plain text body.',Charset='UTF-8'},Html={Data='<h1>This is the HTML body</h1>',Charset='UTF-8'}}");
+                        */
+                        char* output_text = platform->ReadProcessOutput(&GameState->awscli.stdout_read);
+                        if(output_text)
+                        {
+                            strncpy(GameState->aws_output_buffer, output_text, sizeof(GameState->aws_output_buffer) - 1);
+                            GameState->aws_output_buffer[sizeof(GameState->aws_output_buffer) - 1] = '\0';
+                            GameState->show_aws_output = true;
+                        }
                     } break;
                 }
             }

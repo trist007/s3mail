@@ -82,7 +82,16 @@ struct EmailMetadata
     DWORD file_size;
 };
 
-struct Win32ProcessHandle;
+//struct Win32ProcessHandle;
+
+// Process struct for awscli
+struct Win32ProcessHandle
+{
+    PROCESS_INFORMATION process_info;
+    HANDLE stdout_read;
+    bool32 process_running;
+};
+
 struct thread_context;
 
 // text input struct
@@ -122,7 +131,7 @@ struct game_state
     stbtt_bakedchar cdata[96];
     
     // awscli
-    Win32ProcessHandle *awscli;
+    Win32ProcessHandle awscli;
     char aws_output_buffer[4096];
     bool32 show_aws_output;
     

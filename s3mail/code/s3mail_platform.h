@@ -78,13 +78,14 @@ typedef struct key_translation
 //typedef KEY_CODE_TO_CHAR(KeyCodeToChar);
 
 // Process struct for awscli
+/*
 struct Win32ProcessHandle
 {
     PROCESS_INFORMATION process_info;
     HANDLE stdout_read;
     bool32 process_running;
 };
-
+*/
 // File IO
 typedef struct thread_context
 {

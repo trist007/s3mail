@@ -74,7 +74,7 @@ void Win32InvalidateWindow(HWND Window)
 internal void
 Win32ExecuteAWSCLI(game_state *GameState, char *command)
 {
-    //GameState->awscli = {};
+    GameState->awscli = {};
     
     char full_command[1024];
     sprintf(full_command, "cmd /c %s", command);
@@ -100,9 +100,9 @@ Win32ExecuteAWSCLI(game_state *GameState, char *command)
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
         
-        GameState->awscli->process_info = pi;
-        GameState->awscli->stdout_read = stdout_read;
-        GameState->awscli->process_running = true;
+        GameState->awscli.process_info = pi;
+        GameState->awscli.stdout_read = stdout_read;
+        GameState->awscli.process_running = true;
     }
     else
     {
