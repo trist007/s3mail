@@ -716,12 +716,25 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         // To
         GameState->to_button.x_ratio = 0.1146f;
         GameState->to_button.y_ratio = 0.7731f;
-        GameState->to_button.width_ratio = 0.022f;
+        GameState->to_button.width_ratio = 0.87f;
         GameState->to_button.height_ratio = 0.0278f;
         strncpy(GameState->to_button.text,
-                "To:", ArrayCount(GameState->to_button.text));
+                "To: ", 4);
+        
         GameState->to_button.is_hovered = 0;
         GameState->to_button.is_pressed = 0;
+        
+        // From
+        GameState->from_button.x_ratio = 0.1146f;
+        GameState->from_button.y_ratio = 0.7731f;
+        GameState->from_button.width_ratio = 0.87f;
+        //GameState->from_button.height_ratio = 0.0278f;
+        GameState->from_button.height_ratio = 0.0278f;
+        strncpy(GameState->from_button.text,
+                "From: ", 6);
+        
+        GameState->from_button.is_hovered = 0;
+        GameState->from_button.is_pressed = 0;
         
         // Reply text input
         GameState->reply_body.buffer[0] = '\0';
@@ -805,6 +818,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
         
         case MODE_READING_EMAIL:
         {
+            RenderButtonRatio(&GameState->from_button, GameState);
             RenderEmailContent(&GameState->email, GameState);
         } break;
         
@@ -820,7 +834,6 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             }
             
             RenderButtonRatio(&GameState->to_button, GameState);
-            RenderButtonRatio(&GameState->recipient_list, GameState);
             
             // Render the reply composition
             RenderTextInput(GameState,
@@ -993,6 +1006,9 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     GameState->email_content[Result.ContentsSize] = '\0';
                     Memory->DEBUGPlatformFreeFileMemory(&Thread, Result.Contents);
                     GameState->email_array->header_lines = FindHeaderLines(GameState->email_content);
+                    
+                    // NOTE(trist007): adding +6 to show From: 
+                    memmove(GameState->from_button.text+6, GameState->email_array->from, sizeof(GameState->email_array->from));
                     ParseEmail(GameState->email_content, GameState->parsed_email, &GameState->line_count);
                     
                     int textplain_start_line = FindTextPlainContent(GameState->parsed_email, GameState->line_count);
@@ -1187,6 +1203,9 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     // set cursor position to the beginning
                     GameState->reply_body.cursor_position = 0;
                     GameState->reply_body.is_active = 1;
+                    
+                    // fill in To: header
+                    memmove(GameState->to_button.text+4, GameState->email_array->from, sizeof(GameState->email_array->from));
                 } break;
                 
                 // go back to email_list

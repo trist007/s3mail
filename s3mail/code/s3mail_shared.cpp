@@ -482,7 +482,7 @@ ExtractHeader(thread_context *Thread, char *date, EmailMetadata *email_array, in
                 if(AngleBracketStart != NULL)
                 {
                     // Copy everything before the '<'
-                    int name_len = AngleBracketStart - Match;
+                    size_t name_len = strlen(Match);
                     
                     // Remove trailing whitespace from the name
                     while((name_len > 0) && ((Match[name_len - 1] == ' ') || (Match[name_len - 1] == '\t') || (Match[name_len - 1] == '\r')))
@@ -490,11 +490,12 @@ ExtractHeader(thread_context *Thread, char *date, EmailMetadata *email_array, in
                         name_len--;
                     }
                     
-                    snprintf(email_array[count].from, sizeof(email_array[count].from), "%.*s", name_len, Match);
+                    snprintf(email_array[count].from, sizeof(email_array[count].from), "%.*s", (int)name_len, Match);
                 }
                 else
                 {
                     // No angle brackets found, use the whole string
+                    //snprintf(email_array[count].from, sizeof(email_array[count].from), "%s", Match);
                     snprintf(email_array[count].from, sizeof(email_array[count].from), "%s", Match);
                 }
                 
