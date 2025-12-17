@@ -474,15 +474,15 @@ RenderEmailContent(EmailContent* email, game_state* GameState)
         int end_line = min(start_line + lines_to_show, email->item_count);
 */
         
-        if(GameState->email_array->showHeaders)
+        if(GameState->email_array[GameState->email_list.selected_item].showHeaders)
         {
             render_start_line = 0;
             render_end_line = GameState->line_count;
         }
         else
         {
-            render_start_line = GameState->email_array->textplain_start;
-            render_end_line = GameState->email_array->textplain_end;
+            render_start_line = GameState->email_array[GameState->email_list.selected_item].textplain_start;
+            render_end_line = GameState->email_array[GameState->email_list.selected_item].textplain_end;
         }
         
         // render lines from render_start to render_end
@@ -537,8 +537,8 @@ RenderReplyContent(EmailContent* email, game_state* GameState)
         GameState->recipient_list.y_ratio = 0.7731f;
         GameState->recipient_list.width_ratio = 0.85f;
         GameState->recipient_list.height_ratio = 0.0278f;
-        strncpy(GameState->recipient_list.text, GameState->email_array->from,
-                sizeof(GameState->email_array->from));
+        strncpy(GameState->recipient_list.text, GameState->email_array[GameState->email_list.selected_item].from,
+                sizeof(GameState->email_array[GameState->email_list.selected_item].from));
         //GameState->recipient_list.is_hovered = 0;
         //GameState->recipient_list.is_pressed = 0;
         
@@ -554,15 +554,15 @@ RenderReplyContent(EmailContent* email, game_state* GameState)
         int end_line = min(start_line + lines_to_show, email->item_count);
 */
         
-        if(GameState->email_array->showHeaders)
+        if(GameState->email_array[GameState->email_list.selected_item].showHeaders)
         {
             render_start_line = 0;
             render_end_line = GameState->line_count;
         }
         else
         {
-            render_start_line = GameState->email_array->textplain_start;
-            render_end_line = GameState->email_array->textplain_end;
+            render_start_line = GameState->email_array[GameState->email_list.selected_item].textplain_start;
+            render_end_line = GameState->email_array[GameState->email_list.selected_item].textplain_end;
         }
         
         // render lines from render_start to render_end
@@ -1005,10 +1005,10 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     memmove(GameState->email_content, Result.Contents, Result.ContentsSize - 1);
                     GameState->email_content[Result.ContentsSize] = '\0';
                     Memory->DEBUGPlatformFreeFileMemory(&Thread, Result.Contents);
-                    GameState->email_array->header_lines = FindHeaderLines(GameState->email_content);
+                    GameState->email_array[GameState->email_list.selected_item].header_lines = FindHeaderLines(GameState->email_content);
                     
                     // NOTE(trist007): adding +6 to show From: 
-                    memmove(GameState->from_button.text+6, GameState->email_array->from, sizeof(GameState->email_array->from));
+                    memmove(GameState->from_button.text+6, GameState->email_array[GameState->email_list.selected_item].from, sizeof(GameState->email_array[GameState->email_list.selected_item].from));
                     ParseEmail(GameState->email_content, GameState->parsed_email, &GameState->line_count);
                     
                     int textplain_start_line = FindTextPlainContent(GameState->parsed_email, GameState->line_count);
@@ -1019,8 +1019,8 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                                                                   GameState->line_count,
                                                                   textplain_start_line);
                         
-                        GameState->email_array->textplain_start = textplain_start_line;
-                        GameState->email_array->textplain_end = textplain_end_line;
+                        GameState->email_array[GameState->email_list.selected_item].textplain_start = textplain_start_line;
+                        GameState->email_array[GameState->email_list.selected_item].textplain_end = textplain_end_line;
                     }
                     
                     
@@ -1059,8 +1059,8 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 // show headers
                 case 'H':
                 {
-                    GameState->email_array->showHeaders =
-                        !GameState->email_array->showHeaders;
+                    GameState->email_array[GameState->email_list.selected_item].showHeaders =
+                        !GameState->email_array[GameState->email_list.selected_item].showHeaders;
                     
                     // reset scroll offset
                     GameState->email.scroll_offset = 0;
@@ -1078,10 +1078,10 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 */
                 case 'J':
                 {
-                    int render_start_line = GameState->email_array->showHeaders ? 
-                        0 : GameState->email_array->textplain_start;
-                    int render_end_line = GameState->email_array->showHeaders ? 
-                        GameState->line_count : GameState->email_array->textplain_end;
+                    int render_start_line = GameState->email_array[GameState->email_list.selected_item].showHeaders ? 
+                        0 : GameState->email_array[GameState->email_list.selected_item].textplain_start;
+                    int render_end_line = GameState->email_array[GameState->email_list.selected_item].showHeaders ? 
+                        GameState->line_count : GameState->email_array[GameState->email_list.selected_item].textplain_end;
                     int lines_per_page = 30;
                     int total_lines = render_end_line - render_start_line;
                     
@@ -1105,10 +1105,10 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 // scroll down a page
                 case VK_SPACE:
                 {
-                    int render_start_line = GameState->email_array->showHeaders ? 
-                        0 : GameState->email_array->textplain_start;
-                    int render_end_line = GameState->email_array->showHeaders ? 
-                        GameState->line_count : GameState->email_array->textplain_end;
+                    int render_start_line = GameState->email_array[GameState->email_list.selected_item].showHeaders ? 
+                        0 : GameState->email_array[GameState->email_list.selected_item].textplain_start;
+                    int render_end_line = GameState->email_array[GameState->email_list.selected_item].showHeaders ? 
+                        GameState->line_count : GameState->email_array[GameState->email_list.selected_item].textplain_end;
                     int lines_per_page = 30;
                     int total_lines = render_end_line - render_start_line;
                     
@@ -1181,8 +1181,8 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     GameState->reply_body.buffer_length += separator_len;
                     
                     // add original email content text/plain section only
-                    int start_line = GameState->email_array->textplain_start;
-                    int end_line = GameState->email_array->textplain_end;
+                    int start_line = GameState->email_array[GameState->email_list.selected_item].textplain_start;
+                    int end_line = GameState->email_array[GameState->email_list.selected_item].textplain_end;
                     
                     // copy the plain text content
                     for(int i = start_line;
@@ -1205,14 +1205,14 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     GameState->reply_body.is_active = 1;
                     
                     // fill in To: header
-                    memmove(GameState->to_button.text+4, GameState->email_array->from, sizeof(GameState->email_array->from));
+                    memmove(GameState->to_button.text+4, GameState->email_array[GameState->email_list.selected_item].from, sizeof(GameState->email_array[GameState->email_list.selected_item].from));
                 } break;
                 
                 // go back to email_list
                 case 'I':
                 {
                     GameState->current_mode = MODE_EMAIL;
-                    GameState->email_array->showHeaders = 0;
+                    GameState->email_array[GameState->email_list.selected_item].showHeaders = 0;
                 } break;
             }
             // Reading email mode handling
