@@ -1395,12 +1395,31 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     case 'Y':
                     {
                         // TODO(trist007): send email command
+                        // Build the AWS CLI command with dynamic values
+                        char command[4096]; // Adjust size as needed
+                        
+                        // Format the command with proper escaping
+                        snprintf(command, sizeof(command),
+                                 "aws ses send-email "
+                                 "--from \"trist007@darkterminal.net\" "
+                                 "--destination \"ToAddresses=%s\" "
+                                 "--message \"Subject={Data='%s',Charset='UTF-8'},"
+                                 "Body={Text={Data='%s',Charset='UTF-8'}}\"",
+                                 GameState->to_button.text+4,                                         // Recipient email  
+                                 GameState->email_array[GameState->email_list.selected_item].subject, // Subject
+                                 GameState->reply_body.buffer                                         // Body text
+                                 );
+                        
+                        // Execute the command
+                        platform->ExecuteAWSCLI(GameState, command);
+                        
                         /*
                         platform->ExecuteAWSCLI(GameState, "aws ses send-email \
                                                 --from \"sender@example.com\" \
                                                 --destination \"ToAddresses=recipient1@example.com\" \
                                                 --message "Subject={Data='Test Subject',Charset='UTF-8'},Body={Text={Data='This is the plain text body.',Charset='UTF-8'},Html={Data='<h1>This is the HTML body</h1>',Charset='UTF-8'}}");
                         */
+                        
                         char* output_text = platform->ReadProcessOutput(&GameState->awscli.stdout_read);
                         if(output_text)
                         {
