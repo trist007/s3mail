@@ -876,7 +876,19 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
     SetColor(0.8f, 0.8f, 0.8f);
     DrawRect(0, 0, GameState->window_width, 25);
     SetColor(0.0f, 0.0f, 0.0f);
-    DrawTextGame(GameState, "S3Mail - Hot Reloadable Ready!", 10, 8);
+    
+    char buffer[256];
+    if (GameState->current_mode == MODE_REPLYING_EMAIL)
+    {
+        snprintf(buffer, sizeof(buffer), "Subject: %s",
+                 GameState->email_array[GameState->email_list.selected_item].subject);
+        DrawTextGame(GameState, buffer, 10, 8);
+    }
+    
+    else
+    {
+        DrawTextGame(GameState, "S3Mail - Hot Reloadable Ready!", 10, 8);
+    }
     
     // Handle button clicks
     if (GameState->compose_button.is_pressed) {
