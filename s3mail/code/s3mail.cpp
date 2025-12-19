@@ -877,6 +877,8 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
     DrawRect(0, 0, GameState->window_width, 25);
     SetColor(0.0f, 0.0f, 0.0f);
     
+    // NOTE(trist007): don't need to zero out buffer since snprintf adds null terminator each time
+    // unless buffer size is 0
     char buffer[256];
     if (GameState->current_mode == MODE_REPLYING_EMAIL)
     {
