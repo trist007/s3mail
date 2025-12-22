@@ -864,12 +864,6 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             // show aws output instead of preview
             DrawTextGame(GameState, GameState->aws_output_buffer, 640, 320);
         }
-        else if (GameState->email_list.selected_item >= 0)
-        {
-            char preview_text[256];
-            sprintf_s(preview_text, sizeof(preview_text), "Preview of %s - Hot Reloaded!", GameState->email_list.items[GameState->email_list.selected_item]);
-            DrawTextGame(GameState, preview_text, 640, 120);
-        }
     }
     
     // Status bar
@@ -1412,17 +1406,36 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         // Build the AWS CLI command with dynamic values
                         char command[4096]; // Adjust size as needed
                         
+                        FILE *fp = fopen("temp_message.json", "w");
+                        
+                        fprintf(fp, "{\n");
+                        fprintf(fp, " \"Subject\": {\"Data\": \"%s\", \"Charset\": \"UTF-8\"},\n",
+                                GameState->email_array[GameState->email_list.selected_item].subject);
+                        fprintf(fp, " \"Body\": {\"Text\": {\"Data\": \"");
+                        for(char *p = GameState->reply_body.buffer;
+                            *p;
+                            p++)
+                        {
+                            if(*p == '"') fprintf(fp, "\\\"");
+                            
+                            else if (*p == '\\') fprintf(fp, "\\\\");
+                            else if (*p == '\n') fprintf(fp, "\\n");
+                            else if (*p == '\r') fprintf(fp, "\\r");
+                            else if (*p == '\t') fprintf(fp, "\\t");
+                            else fputc(*p, fp);
+                        }
+                        
+                        fprintf(fp, "\", \"Charset\": \"UTF-8\"}}}\n");
+                        fclose(fp);
+                        
                         // Format the command with proper escaping
                         snprintf(command, sizeof(command),
                                  "aws ses send-email "
-                                 "--from \"trist007@darkterminal.net\" "
-                                 "--destination \"ToAddresses=%s\" "
-                                 "--message \"Subject={Data='%s',Charset='UTF-8'},"
-                                 "Body={Text={Data='%s',Charset='UTF-8'}}\"",
-                                 GameState->to_button.text+4,                                         // Recipient email  
-                                 GameState->email_array[GameState->email_list.selected_item].subject, // Subject
-                                 GameState->reply_body.buffer                                         // Body text
-                                 );
+                                 "--from trist007@darkterminal.net "
+                                 "--destination ToAddresses=thartanian@hotmail.com "
+                                 "--message file://temp_message.json");
+                        
+                        // TODO(trist007): need to implement the Body as proper json escaping to account for \r\n
                         
                         // Execute the command
                         platform->ExecuteAWSCLI(GameState, command);

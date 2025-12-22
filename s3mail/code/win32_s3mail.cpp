@@ -76,12 +76,15 @@ Win32ExecuteAWSCLI(game_state *GameState, char *command)
 {
     GameState->awscli = {};
     
-    char full_command[1024];
+    char full_command[4096];
     sprintf(full_command, "cmd /c %s", command);
     
     SECURITY_ATTRIBUTES sa = {sizeof(SECURITY_ATTRIBUTES), NULL, TRUE};
     HANDLE stdout_read, stdout_write;
     CreatePipe(&stdout_read, &stdout_write, &sa, 0);
+    
+    // sets the read handle to be non-inheritable so that process won't hang once stdout_write is closed
+    SetHandleInformation(stdout_read, HANDLE_FLAG_INHERIT, 0);
     
     STARTUPINFO si = {sizeof(STARTUPINFO)};
     si.hStdOutput = stdout_write;
@@ -95,26 +98,64 @@ Win32ExecuteAWSCLI(game_state *GameState, char *command)
     
     if(result)
     {
+        // close write handle immediately
+        CloseHandle(stdout_write);
+        
+        // read output while process is running
+        char buffer[4096];
+        DWORD bytes_read;
+        DWORD total_bytes = 0;
+        
+        // clear the output buffer
+        memset(GameState->aws_output_buffer, 0, sizeof(GameState->aws_output_buffer));
+        
+        // read data from pipe
+        while(ReadFile(stdout_read, buffer, sizeof(buffer) - 1, &bytes_read, NULL) && bytes_read > 0)
+        {
+            // add null terminator
+            buffer[bytes_read] = '\0';
+            
+            // append to buffer if room
+            size_t current_len = strlen(GameState->aws_output_buffer);
+            size_t remaining = sizeof(GameState->aws_output_buffer) - current_len - 1;
+            if(remaining > 0)
+            {
+                strncat(GameState->aws_output_buffer, buffer, remaining);
+            }
+        }
+        
         // Wait for process to complete
         WaitForSingleObject(pi.hProcess, 5000);
+        
+        // get exit code
+        DWORD exit_code;
+        GetExitCodeProcess(pi.hProcess, &exit_code);
+        
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
+        CloseHandle(stdout_write);
         
-        GameState->awscli.process_info = pi;
-        GameState->awscli.stdout_read = stdout_read;
-        GameState->awscli.process_running = true;
+        //GameState->awscli.process_info = pi;
+        //GameState->awscli.stdout_read = stdout_read;
+        GameState->awscli.process_running = false;
+        GameState->show_aws_output = true;
     }
     else
     {
+        DWORD error = GetLastError();
+        // log error
+        sprintf(GameState->aws_output_buffer, "Failed to execute command.  Error: %lu", error);
+        GameState->show_aws_output = true;
+        
         CloseHandle(stdout_read);
+        CloseHandle(stdout_write);
+        
         /*
         GameState->awscli.process_info = (PROCESS_INFORMATION){0};
         GameState->awscli.stdout_read = 0;
         GameState->awscli.process_running = false;
 */
     }
-    
-    CloseHandle(stdout_write);
 }
 
 internal char*
