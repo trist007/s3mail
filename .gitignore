@@ -1,4 +1,5 @@
 *.exe
 build
 .gitignore
+temp_message.json
 key
