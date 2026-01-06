@@ -274,15 +274,6 @@ UpdateButtonRatio(UIButtonRatio* btn, int mouse_x, int mouse_y, int mouse_down, 
 }
 
 void
-UpdateButton(UIButton* btn, int mouse_x, int mouse_y, int mouse_down, int window_height)
-{
-    
-    int gl_y = window_height - mouse_y;
-    btn->is_hovered =  PointInRect(mouse_x, gl_y, btn->x, btn->y, btn->width, btn->height);
-    btn->is_pressed = btn->is_hovered && mouse_down;
-}
-
-void
 RenderButtonRatio(UIButtonRatio* btn, game_state *GameState)
 {
     if (btn->is_pressed) {
@@ -297,26 +288,6 @@ RenderButtonRatio(UIButtonRatio* btn, game_state *GameState)
     btn->y = WINDOW_HEIGHT_HD * btn->y_ratio;
     btn->width = WINDOW_WIDTH_HD * btn->width_ratio;
     btn->height = WINDOW_HEIGHT_HD * btn->height_ratio;
-    
-    DrawRect(btn->x, btn->y, btn->width, btn->height);
-    
-    SetColor(0.0f, 0.0f, 0.0f);
-    DrawRectOutline(btn->x, btn->y, btn->width, btn->height);
-    
-    SetColor(1.0f, 1.0f, 1.0f);
-    DrawTextGame(GameState, btn->text, btn->x + 5, btn->y + 8);
-}
-
-void
-RenderButton(UIButton* btn, game_state* GameState)
-{
-    if (btn->is_pressed) {
-        SetColor(0.2f, 0.2f, 0.6f);
-    } else if (btn->is_hovered) {
-        SetColor(0.4f, 0.4f, 0.8f);
-    } else {
-        SetColor(0.3f, 0.3f, 0.7f);
-    }
     
     DrawRect(btn->x, btn->y, btn->width, btn->height);
     
@@ -347,42 +318,7 @@ UpdateListRatio(UIListRatio* list, int mouse_x, int mouse_y, int mouse_down, int
 }
 
 void
-UpdateList(UIList* list, int mouse_x, int mouse_y, int mouse_down, int window_height)
-{
-    int gl_y = window_height - mouse_y;
-    
-    if (mouse_down &&  PointInRect(mouse_x, gl_y, list->x, list->y, list->width, list->height))
-    {
-        int item_height = 25;
-        int clicked_item = (gl_y - list->y) / item_height;
-        if (clicked_item >= 0 && clicked_item < list->item_count) {
-            list->selected_item = clicked_item;
-        }
-    }
-}
-
-void
 UpdateEmailContent(EmailContent* email, int mouse_x, int mouse_y, int mouse_down, int window_height)
-{
-    int gl_y = window_height - mouse_y;
-    
-    email->x = WINDOW_WIDTH_HD * email->x_ratio;
-    email->y = WINDOW_HEIGHT_HD * email->y_ratio;
-    email->width = WINDOW_WIDTH_HD * email->width_ratio;
-    email->height = WINDOW_HEIGHT_HD * email->height_ratio;
-    
-    if (mouse_down &&  PointInRect(mouse_x, gl_y, email->x, email->y, email->width, email->height)) {
-        int item_height = 25;
-        int clicked_item = (gl_y - email->y) / item_height;
-        if (clicked_item >= 0 && clicked_item < email->item_count) {
-            email->selected_item = clicked_item + email->scroll_offset;
-        }
-    }
-    
-}
-
-void
-UpdateReplyEmail(EmailContent* email, int mouse_x, int mouse_y, int mouse_down, int window_height)
 {
     int gl_y = window_height - mouse_y;
     
@@ -410,35 +346,6 @@ RenderListRatio(UIListRatio* list, game_state* GameState)
     list->width = WINDOW_WIDTH_HD * list->width_ratio;
     list->height = WINDOW_HEIGHT_HD * list->height_ratio;
     
-    // Background
-    SetColor(0.9f, 0.9f, 0.9f);
-    DrawRect(list->x, list->y, list->width, list->height);
-    
-    // Border
-    SetColor(0.0f, 0.0f, 0.0f);
-    DrawRectOutline(list->x, list->y, list->width, list->height);
-    
-    // Items
-    int item_height = 25;
-    for (int i = 0; i < list->item_count; i++) {
-        
-        // Calculate y from the top instead of the bottom 
-        //float item_y = list->y + i * item_height;
-        float item_y = (list->y + list->height) - ((i + 1) * item_height);
-        
-        if (i == list->selected_item) {
-            SetColor(0.5f, 0.7f, 1.0f);  // You can easily tweak these colors now!
-            DrawRect(list->x, item_y, list->width, item_height);
-        }
-        
-        SetColor(0.0f, 0.0f, 0.0f);
-        DrawTextGame(GameState, list->items[i], list->x + 5, item_y + 5);
-    }
-}
-
-void
-RenderList(UIList* list, game_state* GameState)
-{
     // Background
     SetColor(0.9f, 0.9f, 0.9f);
     DrawRect(list->x, list->y, list->width, list->height);
@@ -543,12 +450,6 @@ RenderEmailContent(EmailContent* email, game_state* GameState)
         int render_start_line;
         int render_end_line;
         
-        /*
-        int lines_to_show = 30;
-        int start_line = email->scroll_offset;
-        int end_line = min(start_line + lines_to_show, email->item_count);
-*/
-        
         if(GameState->email_array[GameState->email_list.selected_item].showHeaders)
         {
             render_start_line = 0;
@@ -575,86 +476,6 @@ RenderEmailContent(EmailContent* email, game_state* GameState)
                               email->x + 5,
                               line_y);
         }
-    }
-}
-
-void
-RenderReplyContent(EmailContent* email, game_state* GameState)
-{
-    
-    email->x = WINDOW_WIDTH_HD * email->x_ratio;
-    email->y = WINDOW_HEIGHT_HD * email->y_ratio;
-    email->width = WINDOW_WIDTH_HD * email->width_ratio;
-    email->height = WINDOW_HEIGHT_HD * email->height_ratio;
-    
-    // Background
-    SetColor(0.9f, 0.9f, 0.9f);
-    DrawRect(email->x, email->y, email->width, email->height);
-    
-    // Border
-    SetColor(0.0f, 0.0f, 0.0f);
-    DrawRectOutline(email->x, email->y, email->width, email->height);
-    
-    
-    
-    if(GameState->email_content[0] == '\0')
-    {
-        SetColor(1.0f, 0.0f, 0.0f); // Red text for debug
-        DrawTextGameEmail(GameState, "EMAIL CONTENT IS EMPTY!", 
-                          (0.1146f*WINDOW_WIDTH_HD), (0.1f*WINDOW_HEIGHT_HD));
-    }
-    else
-    {
-        // Recipients
-        GameState->recipient_list.x_ratio = 0.1346f;
-        GameState->recipient_list.y_ratio = 0.7731f;
-        GameState->recipient_list.width_ratio = 0.85f;
-        GameState->recipient_list.height_ratio = 0.0278f;
-        strncpy(GameState->recipient_list.text, GameState->email_array[GameState->email_list.selected_item].from,
-                sizeof(GameState->email_array[GameState->email_list.selected_item].from));
-        //GameState->recipient_list.is_hovered = 0;
-        //GameState->recipient_list.is_pressed = 0;
-        
-        // Draw email content within the content area
-        SetColor(0.0f, 0.0f, 0.0f);
-        
-        int render_start_line;
-        int render_end_line;
-        
-        /*
-        int lines_to_show = 30;
-        int start_line = email->scroll_offset;
-        int end_line = min(start_line + lines_to_show, email->item_count);
-*/
-        
-        if(GameState->email_array[GameState->email_list.selected_item].showHeaders)
-        {
-            render_start_line = 0;
-            render_end_line = GameState->line_count;
-        }
-        else
-        {
-            render_start_line = GameState->email_array[GameState->email_list.selected_item].textplain_start;
-            render_end_line = GameState->email_array[GameState->email_list.selected_item].textplain_end;
-        }
-        
-        // render lines from render_start to render_end
-        int lines_to_show = 30;
-        int start_line = render_start_line + email->scroll_offset;
-        int end_line = min(start_line + lines_to_show, render_end_line);
-        
-        for(int i = start_line;
-            i < end_line;
-            i++)
-        {
-            float line_y = email->y + (email->height - ((i - start_line + 1) * 25));
-            DrawTextGameEmail(GameState,
-                              GameState->parsed_email[i],
-                              email->x + 5,
-                              line_y);
-        }
-        
-        
     }
 }
 
@@ -690,39 +511,7 @@ CalculateTextPosition(game_state* GameState, char *text, int char_count, float s
 }
 
 void
-RenderTextInput(game_state* GameState, float x, float y, float width, float height)
-{
-    // Draw background
-    SetColor(1.0f, 1.0f, 1.0f);
-    DrawRect(x, y, width, height);
-    
-    // Draw border
-    SetColor(0.0f, 0.0f, 0.0f);
-    DrawRectOutline(x, y, width, height);
-    
-    // Draw text
-    SetColor(0.0f, 0.0f, 0.0f);
-    //DrawTextGameEmail(GameState, GameState->reply_body.buffer, x + 5, y + height - 25);
-    
-    float text_start_x = x + 5;
-    float text_start_y = y + height - 25;
-    DrawTextGameEmail(GameState, GameState->reply_body.buffer, text_start_x, text_start_y);
-    
-    // Draw cursor if active
-    if (GameState->reply_body.is_active && GameState->reply_body.cursor_visible)
-    {
-        float cursor_x, cursor_y;
-        CalculateTextPosition(GameState, GameState->reply_body.buffer,
-                              GameState->reply_body.cursor_position,
-                              text_start_x, text_start_y,
-                              &cursor_x, &cursor_y);
-        SetColor(0.0f, 0.0f, 0.0f);
-        DrawRect(cursor_x, cursor_y, 2, 20); // Vertical cursor line
-    }
-}
-
-void
-RenderTextInputTo(game_state* GameState, float x, float y, float width, float height)
+RenderTextInput(game_state* GameState, text_input* TextInput, float x, float y, float width, float height)
 {
     // Draw background
     SetColor(1.0f, 1.0f, 1.0f);
@@ -737,14 +526,14 @@ RenderTextInputTo(game_state* GameState, float x, float y, float width, float he
     
     float text_start_x = x + 5;
     float text_start_y = y + height - 25;
-    DrawTextGameEmail(GameState, GameState->to_body.buffer, text_start_x, text_start_y);
+    DrawTextGameEmail(GameState, TextInput->buffer, text_start_x, text_start_y);
     
     // Draw cursor if active
-    if (GameState->to_body.is_active && GameState->to_body.cursor_visible)
+    if (TextInput->is_active && TextInput->cursor_visible)
     {
         float cursor_x, cursor_y;
-        CalculateTextPosition(GameState, GameState->to_body.buffer,
-                              GameState->to_body.cursor_position,
+        CalculateTextPosition(GameState, TextInput->buffer,
+                              TextInput->cursor_position,
                               text_start_x, text_start_y,
                               &cursor_x, &cursor_y);
         SetColor(0.0f, 0.0f, 0.0f);
@@ -909,7 +698,6 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
         case MODE_REPLYING_EMAIL:
         case MODE_FORWARDING_EMAIL:
         {
-            //UpdateReplyEmail(&GameState->email, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
         }
     }
     
@@ -949,13 +737,12 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             RenderButtonRatio(&GameState->to_button, GameState);
             
             // Render the reply composition
-            RenderTextInput(GameState,
+            RenderTextInput(GameState, &GameState->reply_body,
                             0.1146f * WINDOW_WIDTH_HD,
                             0.4f * WINDOW_HEIGHT_HD,
                             0.87f * WINDOW_WIDTH_HD,
                             0.35f * WINDOW_HEIGHT_HD);
             
-            //RenderReplyContent(&GameState->email, GameState);
         } break;
         
         case MODE_FORWARDING_EMAIL:
@@ -972,13 +759,12 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             RenderButtonRatio(&GameState->to_button, GameState);
             
             // Render the reply composition
-            RenderTextInputTo(GameState,
-                              0.1146f * WINDOW_WIDTH_HD,
-                              0.7731f * WINDOW_HEIGHT_HD,
-                              0.87f * WINDOW_WIDTH_HD,
-                              0.0278f * WINDOW_HEIGHT_HD);
+            RenderTextInput(GameState, &GameState->to_body,
+                            0.1146f * WINDOW_WIDTH_HD,
+                            0.7731f * WINDOW_HEIGHT_HD,
+                            0.87f * WINDOW_WIDTH_HD,
+                            0.0278f * WINDOW_HEIGHT_HD);
             
-            //RenderReplyContent(&GameState->
         } break;
     }
     
