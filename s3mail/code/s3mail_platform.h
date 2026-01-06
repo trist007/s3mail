@@ -191,6 +191,8 @@ typedef struct {
     HWND Window;
 } PlatformAPI;
 
+void SendEmail(game_state *GameState, PlatformAPI *platform);
+
 // DLL export signature
 #define GAME_UPDATE_AND_RENDER(name) void name(thread_context *Thread, game_memory *Memory, game_state *GameState, PlatformAPI* platform)
 typedef GAME_UPDATE_AND_RENDER(game_update_and_render);

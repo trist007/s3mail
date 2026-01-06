@@ -10,6 +10,7 @@ typedef enum {
     MODE_CONTACT,
     MODE_READING_EMAIL,
     MODE_REPLYING_EMAIL,
+    MODE_FORWARDING_EMAIL,
     MODE_COUNT
 } app_mode;
 
@@ -145,6 +146,7 @@ struct game_state
     // text input for compose and reply
     text_input reply_body;
     text_input compose_body;
+    text_input to_body;
     
     // Memory
     uint64 TotalSize;

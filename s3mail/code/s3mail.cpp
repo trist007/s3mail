@@ -14,8 +14,83 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 
+// Email address
+#define EMAIL_ADDRESS "trist007@darkterminal.net"
+
 // Email Layout format string
 #define EMAIL_FORMAT "%-30.30s | %-69.69s | %-25.25s"
+
+// Code re-use utility functions
+void
+SendEmail(PlatformAPI *platform, game_state *GameState)
+{
+    
+    // TODO(trist007): send email command
+    // Build the AWS CLI command with dynamic values
+    char command[4096]; // Adjust size as needed
+    
+    FILE *fp = fopen("temp_message.json", "w");
+    
+    fprintf(fp, "{\n");
+    fprintf(fp, " \"Subject\": {\"Data\": \"%s\", \"Charset\": \"UTF-8\"},\n",
+            GameState->email_array[GameState->email_list.selected_item].subject);
+    fprintf(fp, " \"Body\": {\"Text\": {\"Data\": \"");
+    for(char *p = GameState->reply_body.buffer;
+        *p;
+        p++)
+    {
+        if(*p == '"') fprintf(fp, "\\\"");
+        
+        else if (*p == '\\') fprintf(fp, "\\\\");
+        else if (*p == '\n') fprintf(fp, "\\n");
+        else if (*p == '\r') fprintf(fp, "\\r");
+        else if (*p == '\t') fprintf(fp, "\\t");
+        else fputc(*p, fp);
+    }
+    
+    fprintf(fp, "\", \"Charset\": \"UTF-8\"}}}\n");
+    fclose(fp);
+    
+    char recipient[256];
+    if(GameState->current_mode == MODE_FORWARDING_EMAIL)
+    {
+        strncpy(recipient, GameState->to_body.buffer, sizeof(recipient) - 1);
+        recipient[sizeof(recipient) - 1] = '\0';
+    }
+    else
+    {
+        strncpy(recipient, GameState->email_array[GameState->email_list.selected_item].from,
+                sizeof(recipient) - 1);
+        recipient[sizeof(recipient) - 1] = '\0';
+    }
+    
+    // Format the command with proper escaping
+    snprintf(command, sizeof(command),
+             "aws ses send-email "
+             "--from " EMAIL_ADDRESS " "
+             "--destination ToAddresses=%s "
+             "--message file://temp_message.json", recipient);
+    
+    // TODO(trist007): need to implement the Body as proper json escaping to account for \r\n
+    
+    // Execute the command
+    platform->ExecuteAWSCLI(GameState, command);
+    
+    /*
+    platform->ExecuteAWSCLI(GameState, "aws ses send-email \
+                            --from \"sender@example.com\" \
+                            --destination \"ToAddresses=recipient1@example.com\" \
+                            --message "Subject={Data='Test Subject',Charset='UTF-8'},Body={Text={Data='This is the plain text body.',Charset='UTF-8'},Html={Data='<h1>This is the HTML body</h1>',Charset='UTF-8'}}");
+    */
+    
+    char* output_text = platform->ReadProcessOutput(&GameState->awscli.stdout_read);
+    if(output_text)
+    {
+        strncpy(GameState->aws_output_buffer, output_text, sizeof(GameState->aws_output_buffer) - 1);
+        GameState->aws_output_buffer[sizeof(GameState->aws_output_buffer) - 1] = '\0';
+        GameState->show_aws_output = true;
+    }
+}
 
 void
 DrawTextGame(game_state *GameState, const char *text, float x, float y)
@@ -500,8 +575,6 @@ RenderEmailContent(EmailContent* email, game_state* GameState)
                               email->x + 5,
                               line_y);
         }
-        
-        
     }
 }
 
@@ -648,6 +721,37 @@ RenderTextInput(game_state* GameState, float x, float y, float width, float heig
     }
 }
 
+void
+RenderTextInputTo(game_state* GameState, float x, float y, float width, float height)
+{
+    // Draw background
+    SetColor(1.0f, 1.0f, 1.0f);
+    DrawRect(x, y, width, height);
+    
+    // Draw border
+    SetColor(0.0f, 0.0f, 0.0f);
+    DrawRectOutline(x, y, width, height);
+    
+    // Draw text
+    SetColor(0.0f, 0.0f, 0.0f);
+    
+    float text_start_x = x + 5;
+    float text_start_y = y + height - 25;
+    DrawTextGameEmail(GameState, GameState->to_body.buffer, text_start_x, text_start_y);
+    
+    // Draw cursor if active
+    if (GameState->to_body.is_active && GameState->to_body.cursor_visible)
+    {
+        float cursor_x, cursor_y;
+        CalculateTextPosition(GameState, GameState->to_body.buffer,
+                              GameState->to_body.cursor_position,
+                              text_start_x, text_start_y,
+                              &cursor_x, &cursor_y);
+        SetColor(0.0f, 0.0f, 0.0f);
+        DrawRect(cursor_x, cursor_y, 2, 20); // Vertical cursor line
+    }
+}
+
 __declspec(dllexport)
 GAME_INITIALIZE_UI(GameInitializeUI)
 {
@@ -665,7 +769,6 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         strncpy(GameState->compose_button.text,
                 "Compose", ArrayCount(GameState->compose_button.text));
         
-        
         GameState->compose_button.is_hovered = 0;
         GameState->compose_button.is_pressed = 0;
         
@@ -675,6 +778,7 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->delete_button.height_ratio = 0.0278f;
         strncpy(GameState->delete_button.text,
                 "Delete", ArrayCount(GameState->delete_button.text));
+        
         GameState->delete_button.is_hovered = 0;
         GameState->delete_button.is_pressed = 0;
         
@@ -744,6 +848,14 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->reply_body.blink_timer = 0.0f;
         GameState->reply_body.cursor_visible = 1;
         
+        // To text input
+        GameState->to_body.buffer[0] = '\0';
+        GameState->to_body.cursor_position = 0;
+        GameState->to_body.buffer_length = 0;
+        GameState->to_body.is_active = 0;
+        GameState->to_body.blink_timer = 0.0f;
+        GameState->to_body.cursor_visible = 1;
+        
         // NOTE(trist007): testing Email headers display
         for(int i = 0;
             i < GameState->email_count;
@@ -795,6 +907,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
         } break;
         
         case MODE_REPLYING_EMAIL:
+        case MODE_FORWARDING_EMAIL:
         {
             //UpdateReplyEmail(&GameState->email, GameState->mouse_x, GameState->mouse_y, GameState->mouse_down, GameState->window_height);
         }
@@ -843,6 +956,29 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                             0.35f * WINDOW_HEIGHT_HD);
             
             //RenderReplyContent(&GameState->email, GameState);
+        } break;
+        
+        case MODE_FORWARDING_EMAIL:
+        {
+            // Update cursor blink, assuming 60 fps
+            GameState->to_body.blink_timer += 0.016f;
+            if(GameState->to_body.blink_timer > 0.5f)
+            {
+                GameState->to_body.cursor_visible = !GameState->to_body.cursor_visible;
+                
+                GameState->to_body.blink_timer = 0.0f;
+            }
+            
+            RenderButtonRatio(&GameState->to_button, GameState);
+            
+            // Render the reply composition
+            RenderTextInputTo(GameState,
+                              0.1146f * WINDOW_WIDTH_HD,
+                              0.7731f * WINDOW_HEIGHT_HD,
+                              0.87f * WINDOW_WIDTH_HD,
+                              0.0278f * WINDOW_HEIGHT_HD);
+            
+            //RenderReplyContent(&GameState->
         } break;
     }
     
@@ -1163,6 +1299,65 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                 case 'F':
                 {
                     // code for forwarding email
+                    GameState->current_mode = MODE_FORWARDING_EMAIL;
+                    
+                    // Clear the To field for user input
+                    GameState->to_body.buffer[0] = '\0';
+                    GameState->to_body.buffer_length = 0;
+                    GameState->to_body.cursor_position = 0;
+                    GameState->to_body.is_active = 1;  // Activate the To field immediately
+                    
+                    // Update the To button text
+                    strncpy(GameState->to_button.text, "To: ", 5);
+                    
+                    // Pre-populate the reply buffer with forwarded content
+                    char separator[] = "\n---------- Forwarded message ----------\n";
+                    size_t separator_len = strlen(separator);
+                    
+                    // Clear reply buffer
+                    GameState->reply_body.buffer[0] = '\0';
+                    GameState->reply_body.buffer_length = 0;
+                    GameState->reply_body.cursor_position = 0;
+                    
+                    // Add some blank lines for forwarding message
+                    strcat(GameState->reply_body.buffer, "\n\n");
+                    GameState->reply_body.buffer_length = 2;
+                    
+                    // Add separator
+                    strcat(GameState->reply_body.buffer, separator);
+                    GameState->reply_body.buffer_length += separator_len;
+                    
+                    // Add original email headers
+                    char header_info[512];
+                    snprintf(header_info, sizeof(header_info),
+                             "From: %s\nDate: %s\nSubject: %s\n\n",
+                             GameState->email_array[GameState->email_list.selected_item].from,
+                             GameState->email_array[GameState->email_list.selected_item].date,
+                             GameState->email_array[GameState->email_list.selected_item].subject);
+                    
+                    strcat(GameState->reply_body.buffer, header_info);
+                    GameState->reply_body.buffer_length += strlen(header_info);
+                    
+                    // Add original email content (text/plain section)
+                    int start_line = GameState->email_array[GameState->email_list.selected_item].textplain_start;
+                    int end_line = GameState->email_array[GameState->email_list.selected_item].textplain_end;
+                    
+                    for(int i = start_line; i < end_line; i++)
+                    {
+                        size_t line_len = strlen(GameState->parsed_email[i]);
+                        
+                        if(GameState->reply_body.buffer_length + line_len + 1 < sizeof(GameState->reply_body.buffer) - 1)
+                        {
+                            strcat(GameState->reply_body.buffer, GameState->parsed_email[i]);
+                            strcat(GameState->reply_body.buffer, "\n");
+                            GameState->reply_body.buffer_length += line_len + 1;
+                        }
+                    }
+                    
+                    // Set cursor to beginning for user to add forwarding message
+                    GameState->reply_body.cursor_position = 0;
+                    GameState->reply_body.is_active = 0;  // Start with To field active, not body
+                    
                 } break;
                 // reply email
                 case 'R':
@@ -1225,6 +1420,79 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
             }
             // Reading email mode handling
         } break;
+        
+        case MODE_FORWARDING_EMAIL:
+        {
+            // Activate text input when user starts typing
+            // all printable chars in ASCII except i (105) and y (121)
+            if(!GameState->to_body.is_active &&
+               (key_code >= 32 && key_code < 105) &&
+               (key_code >= 106 && key_code < 121) &&
+               (key_code >= 122 &&key_code < 128))
+            {
+                GameState->to_body.is_active = 1;
+            }
+            
+            if(GameState->to_body.is_active)
+            {
+                switch (key_code)
+                {
+                    
+                    // exit text input mode
+                    case VK_ESCAPE:
+                    {
+                        GameState->to_body.is_active = 0;
+                        //GameState->current_mode = MODE_READING_EMAIL;
+                    } break;
+                    
+                    default:
+                    {
+                        // handle regular char input
+                        if(GameState->to_body.buffer_length < sizeof(GameState->to_body.buffer) - 1)
+                        {
+                            key_translation key = platform->KeyCodeToChar(key_code);
+                            
+                            if(key.valid)
+                            {
+                                // Insert character at cursor position
+                                memmove(&GameState->to_body.buffer[GameState->to_body.cursor_position + 1],
+                                        &GameState->to_body.buffer[GameState->to_body.cursor_position],
+                                        GameState->to_body.buffer_length - GameState->to_body.cursor_position + 1);
+                                
+                                GameState->to_body.buffer[GameState->to_body.cursor_position] = key.character;
+                                GameState->to_body.cursor_position++;
+                                GameState->to_body.buffer_length++;
+                            }
+                        }
+                    } break;
+                }
+            }
+            else
+            {
+                switch(key_code)
+                {
+                    // De-activate edit mode into command mode
+                    case 'I':
+                    {
+                        GameState->current_mode = MODE_READING_EMAIL;
+                        
+                        // zero out reply_body.buffer
+                        memset(GameState->to_body.buffer, 0, sizeof(GameState->to_body.buffer));
+                        GameState->to_body.buffer_length = 0;
+                        GameState->to_body.cursor_position = 0;
+                        GameState->to_body.buffer_length = 0;
+                    } break;
+                    
+                    // send email
+                    case 'Y':
+                    {
+                        SendEmail(platform, GameState);
+                        
+                    } break;
+                }
+            }
+        } break;
+        
         case MODE_REPLYING_EMAIL:
         {
             // Activate text input when user starts typing
@@ -1303,73 +1571,6 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                             
                             if(key.valid)
                             {
-                                
-                                /*
-    char c = 0;
-                                bool32 shift_held = platform->IsKeyPressed(VK_SHIFT);
-                                
-                                
-                                // Handle letters
-                                if(key_code >= 'A' && key_code <= 'Z')
-                                {
-                                    c = shift_held ? key_code : (key_code + 32);
-                                }
-                                
-                                // Handle all other printable chars (including space)
-                                else if(key_code >= '0' && key_code <= '9')
-                                {
-                                    // Handle shift+number for symbols like !, @, #, etc.
-                                    if(shift_held)
-                                    {
-                                        const char shift_numbers[] = ")!@#$%^&*(";
-                                        c = shift_numbers[key_code - '0'];
-                                    }
-                                    else
-                                    {
-                                        c = (char)key_code;
-                                    }
-                                }
-                                
-                                // Handle space and other directly mapped keys
-                                else if(key_code == VK_SPACE)
-                                {
-                                    c = ' ';
-                                }
-                                
-                                // Handle OEM keys
-                                else if(key_code == VK_OEM_MINUS)  // minus/underscore key
-                                {
-                                    c = shift_held ? '_' : '-';
-                                }
-                                
-                                else if(key_code == VK_OEM_PLUS)   // equals/plus key
-                                {
-                                    c = shift_held ? '+' : '=';
-                                }
-                                
-                                else if(key_code == VK_OEM_COMMA)
-                                {
-                                    c = shift_held ? '<' : ',';
-                                }
-                                
-                                else if(key_code == VK_OEM_PERIOD)
-                                {
-                                    c = shift_held ? '>' : '.';
-                                }
-                                
-                                else if(key_code == VK_OEM_2)  // forward slash/question mark
-                                {
-                                    c = shift_held ? '?' : '/';
-                                }
-                                
-                                else if(key_code >= 32 && key_code < 128)
-                                {
-                                    c = (char)key_code;
-                                }
-                                
-                                if(c != 0)
-                                {
-                                    */
                                 // Insert character at cursor position
                                 memmove(&GameState->reply_body.buffer[GameState->reply_body.cursor_position + 1],
                                         &GameState->reply_body.buffer[GameState->reply_body.cursor_position],
@@ -1402,58 +1603,8 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     // send email
                     case 'Y':
                     {
-                        // TODO(trist007): send email command
-                        // Build the AWS CLI command with dynamic values
-                        char command[4096]; // Adjust size as needed
+                        SendEmail(platform, GameState);
                         
-                        FILE *fp = fopen("temp_message.json", "w");
-                        
-                        fprintf(fp, "{\n");
-                        fprintf(fp, " \"Subject\": {\"Data\": \"%s\", \"Charset\": \"UTF-8\"},\n",
-                                GameState->email_array[GameState->email_list.selected_item].subject);
-                        fprintf(fp, " \"Body\": {\"Text\": {\"Data\": \"");
-                        for(char *p = GameState->reply_body.buffer;
-                            *p;
-                            p++)
-                        {
-                            if(*p == '"') fprintf(fp, "\\\"");
-                            
-                            else if (*p == '\\') fprintf(fp, "\\\\");
-                            else if (*p == '\n') fprintf(fp, "\\n");
-                            else if (*p == '\r') fprintf(fp, "\\r");
-                            else if (*p == '\t') fprintf(fp, "\\t");
-                            else fputc(*p, fp);
-                        }
-                        
-                        fprintf(fp, "\", \"Charset\": \"UTF-8\"}}}\n");
-                        fclose(fp);
-                        
-                        // Format the command with proper escaping
-                        snprintf(command, sizeof(command),
-                                 "aws ses send-email "
-                                 "--from trist007@darkterminal.net "
-                                 "--destination ToAddresses=thartanian@hotmail.com "
-                                 "--message file://temp_message.json");
-                        
-                        // TODO(trist007): need to implement the Body as proper json escaping to account for \r\n
-                        
-                        // Execute the command
-                        platform->ExecuteAWSCLI(GameState, command);
-                        
-                        /*
-                        platform->ExecuteAWSCLI(GameState, "aws ses send-email \
-                                                --from \"sender@example.com\" \
-                                                --destination \"ToAddresses=recipient1@example.com\" \
-                                                --message "Subject={Data='Test Subject',Charset='UTF-8'},Body={Text={Data='This is the plain text body.',Charset='UTF-8'},Html={Data='<h1>This is the HTML body</h1>',Charset='UTF-8'}}");
-                        */
-                        
-                        char* output_text = platform->ReadProcessOutput(&GameState->awscli.stdout_read);
-                        if(output_text)
-                        {
-                            strncpy(GameState->aws_output_buffer, output_text, sizeof(GameState->aws_output_buffer) - 1);
-                            GameState->aws_output_buffer[sizeof(GameState->aws_output_buffer) - 1] = '\0';
-                            GameState->show_aws_output = true;
-                        }
                     } break;
                 }
             }
