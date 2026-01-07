@@ -743,6 +743,7 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                             0.87f * WINDOW_WIDTH_HD,
                             0.35f * WINDOW_HEIGHT_HD);
             
+            
         } break;
         
         case MODE_FORWARDING_EMAIL:
@@ -758,7 +759,15 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             
             RenderButtonRatio(&GameState->to_button, GameState);
             
+            
             // Render the reply composition
+            RenderTextInput(GameState, &GameState->reply_body,
+                            0.1146f * WINDOW_WIDTH_HD,
+                            0.4f * WINDOW_HEIGHT_HD,
+                            0.87f * WINDOW_WIDTH_HD,
+                            0.35f * WINDOW_HEIGHT_HD);
+            
+            // Render the To buffer
             RenderTextInput(GameState, &GameState->to_body,
                             0.1146f * WINDOW_WIDTH_HD,
                             0.7731f * WINDOW_HEIGHT_HD,
@@ -1223,6 +1232,20 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
             {
                 switch (key_code)
                 {
+                    // Backspace
+                    case VK_BACK:
+                    {
+                        // Remove character before cursor
+                        memmove(&GameState->to_body.buffer[GameState->to_body.cursor_position - 1],
+                                &GameState->to_body.buffer[GameState->to_body.cursor_position],
+                                GameState->to_body.buffer_length -
+                                GameState->to_body.cursor_position + 1);
+                        
+                        //GameState->to_body.buffer[GameState->to_body.cursor_position]
+                        //= '\n';
+                        GameState->to_body.cursor_position--;
+                        GameState->to_body.buffer_length--;
+                    } break;
                     
                     // exit text input mode
                     case VK_ESCAPE:
