@@ -725,14 +725,6 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
         
         case MODE_REPLYING_EMAIL:
         {
-            // Update cursor blink, assuming 60 fps
-            GameState->reply_body.blink_timer += 0.016f;
-            if(GameState->reply_body.blink_timer > 0.5f)
-            {
-                GameState->reply_body.cursor_visible = !GameState->reply_body.cursor_visible;
-                
-                GameState->reply_body.blink_timer = 0.0f;
-            }
             
             RenderButtonRatio(&GameState->to_button, GameState);
             
@@ -743,19 +735,17 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
                             0.87f * WINDOW_WIDTH_HD,
                             0.35f * WINDOW_HEIGHT_HD);
             
+            // Render the To buffer
+            RenderTextInput(GameState, &GameState->to_body,
+                            0.1146f * WINDOW_WIDTH_HD,
+                            0.7731f * WINDOW_HEIGHT_HD,
+                            0.87f * WINDOW_WIDTH_HD,
+                            0.0278f * WINDOW_HEIGHT_HD);
             
         } break;
         
         case MODE_FORWARDING_EMAIL:
         {
-            // Update cursor blink, assuming 60 fps
-            GameState->to_body.blink_timer += 0.016f;
-            if(GameState->to_body.blink_timer > 0.5f)
-            {
-                GameState->to_body.cursor_visible = !GameState->to_body.cursor_visible;
-                
-                GameState->to_body.blink_timer = 0.0f;
-            }
             
             RenderButtonRatio(&GameState->to_button, GameState);
             
@@ -1102,6 +1092,15 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     GameState->to_body.cursor_position = 0;
                     GameState->to_body.is_active = 1;  // Activate the To field immediately
                     
+                    // Update cursor blink, assuming 60 fps
+                    GameState->to_body.blink_timer += 0.016f;
+                    if(GameState->to_body.blink_timer > 0.5f)
+                    {
+                        GameState->to_body.cursor_visible = !GameState->to_body.cursor_visible;
+                        
+                        GameState->to_body.blink_timer = 0.0f;
+                    }
+                    
                     // Update the To button text
                     strncpy(GameState->to_button.text, "To: ", 5);
                     
@@ -1168,6 +1167,16 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     GameState->reply_body.buffer[0] = '\0';
                     GameState->reply_body.buffer_length = 0;
                     GameState->reply_body.cursor_position = 0;
+                    
+                    
+                    // Update cursor blink, assuming 60 fps
+                    GameState->reply_body.blink_timer += 0.016f;
+                    if(GameState->reply_body.blink_timer > 0.5f)
+                    {
+                        GameState->reply_body.cursor_visible = !GameState->reply_body.cursor_visible;
+                        
+                        GameState->reply_body.blink_timer = 0.0f;
+                    }
                     
                     // add some blank lines for the user to type their response
                     strcat(GameState->reply_body.buffer, "\n\n");
@@ -1276,6 +1285,55 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     } break;
                 }
             }
+            
+            else if(GameState->reply_body.is_active)
+            {
+                switch (key_code)
+                {
+                    // Backspace
+                    case VK_BACK:
+                    {
+                        // Remove character before cursor
+                        memmove(&GameState->reply_body.buffer[GameState->reply_body.cursor_position - 1],
+                                &GameState->reply_body.buffer[GameState->reply_body.cursor_position],
+                                GameState->reply_body.buffer_length -
+                                GameState->reply_body.cursor_position + 1);
+                        
+                        //GameState->reply_body.buffer[GameState->reply_body.cursor_position]
+                        //= '\n';
+                        GameState->reply_body.cursor_position--;
+                        GameState->reply_body.buffer_length--;
+                    } break;
+                    
+                    // exit text input mode
+                    case VK_ESCAPE:
+                    {
+                        GameState->reply_body.is_active = 0;
+                        //GameState->current_mode = MODE_READING_EMAIL;
+                    } break;
+                    
+                    default:
+                    {
+                        // handle regular char input
+                        if(GameState->reply_body.buffer_length < sizeof(GameState->reply_body.buffer) - 1)
+                        {
+                            key_translation key = platform->KeyCodeToChar(key_code);
+                            
+                            if(key.valid)
+                            {
+                                // Insert character at cursor position
+                                memmove(&GameState->reply_body.buffer[GameState->reply_body.cursor_position + 1],
+                                        &GameState->reply_body.buffer[GameState->reply_body.cursor_position],
+                                        GameState->reply_body.buffer_length - GameState->reply_body.cursor_position + 1);
+                                
+                                GameState->reply_body.buffer[GameState->reply_body.cursor_position] = key.character;
+                                GameState->reply_body.cursor_position++;
+                                GameState->reply_body.buffer_length++;
+                            }
+                        }
+                    } break;
+                }
+            }
             else
             {
                 switch(key_code)
@@ -1290,6 +1348,18 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         GameState->to_body.buffer_length = 0;
                         GameState->to_body.cursor_position = 0;
                         GameState->to_body.buffer_length = 0;
+                        
+                        // zero out blink_timers
+                        GameState->reply_body.blink_timer = 0.0f;
+                        GameState->to_body.blink_timer = 0.0f;
+                        
+                    } break;
+                    
+                    // switch between To field and message body
+                    case VK_TAB:
+                    {
+                        GameState->to_body.is_active = !GameState->to_body.is_active;
+                        GameState->reply_body.is_active = !GameState->reply_body.is_active;
                     } break;
                     
                     // send email
@@ -1393,6 +1463,85 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     } break;
                 }
             }
+            else if(GameState->to_body.is_active)
+            {
+                switch (key_code)
+                {
+                    // Backspace
+                    case VK_BACK:
+                    {
+                        // Remove character before cursor
+                        memmove(&GameState->to_body.buffer[GameState->to_body.cursor_position - 1],
+                                &GameState->to_body.buffer[GameState->to_body.cursor_position],
+                                GameState->to_body.buffer_length -
+                                GameState->to_body.cursor_position + 1);
+                        
+                        //GameState->to_body.buffer[GameState->to_body.cursor_position]
+                        //= '\n';
+                        GameState->to_body.cursor_position--;
+                        GameState->to_body.buffer_length--;
+                    } break;
+                    
+                    case VK_LEFT:
+                    {
+                        if(GameState->to_body.cursor_position > 0)
+                        {
+                            GameState->to_body.cursor_position--;
+                        }
+                    } break;
+                    
+                    case VK_RIGHT:
+                    {
+                        if(GameState->to_body.cursor_position < GameState->to_body.buffer_length)
+                        {
+                            GameState->to_body.cursor_position++;
+                        }
+                    } break;
+                    
+                    
+                    case VK_RETURN:
+                    {
+                        if(GameState->to_body.buffer_length < sizeof(GameState->to_body.buffer) - 1)
+                        {
+                            memmove(&GameState->to_body.buffer[GameState->to_body.cursor_position + 1],
+                                    &GameState->to_body.buffer[GameState->to_body.cursor_position],
+                                    GameState->to_body.buffer_length - GameState->to_body.cursor_position + 1);
+                            
+                            GameState->to_body.buffer[GameState->to_body.cursor_position] = '\n';
+                            GameState->to_body.cursor_position++;
+                            GameState->to_body.buffer_length++;
+                        }
+                    } break;
+                    
+                    // exit text input mode
+                    case VK_ESCAPE:
+                    {
+                        GameState->to_body.is_active = 0;
+                        //GameState->current_mode = MODE_READING_EMAIL;
+                    } break;
+                    
+                    default:
+                    {
+                        // handle regular char input
+                        if(GameState->to_body.buffer_length < sizeof(GameState->to_body.buffer) - 1)
+                        {
+                            key_translation key = platform->KeyCodeToChar(key_code);
+                            
+                            if(key.valid)
+                            {
+                                // Insert character at cursor position
+                                memmove(&GameState->to_body.buffer[GameState->to_body.cursor_position + 1],
+                                        &GameState->to_body.buffer[GameState->to_body.cursor_position],
+                                        GameState->to_body.buffer_length - GameState->to_body.cursor_position + 1);
+                                
+                                GameState->to_body.buffer[GameState->to_body.cursor_position] = key.character;
+                                GameState->to_body.cursor_position++;
+                                GameState->to_body.buffer_length++;
+                            }
+                        }
+                    } break;
+                }
+            }
             else
             {
                 switch(key_code)
@@ -1407,6 +1556,16 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         GameState->reply_body.buffer_length = 0;
                         GameState->reply_body.cursor_position = 0;
                         GameState->reply_body.buffer_length = 0;
+                        
+                        // zero out blink_timers
+                        GameState->reply_body.blink_timer = 0.0f;
+                        GameState->to_body.blink_timer = 0.0f;
+                    } break;
+                    
+                    case VK_TAB:
+                    {
+                        GameState->to_body.is_active = !GameState->to_body.is_active;
+                        GameState->reply_body.is_active = !GameState->reply_body.is_active;
                     } break;
                     
                     // send email
