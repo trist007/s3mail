@@ -121,6 +121,7 @@ struct game_state
     UIButtonRatio delete_button;
     UIButtonRatio to_button;
     UIButtonRatio from_button;
+    UIButtonRatio forward_button;
     UIListRatio folder_list;
     UIListRatio email_list;
     UIListRatio contact_list;

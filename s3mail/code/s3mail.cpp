@@ -609,10 +609,10 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         // To
         GameState->to_button.x_ratio = 0.1146f;
         GameState->to_button.y_ratio = 0.7731f;
-        GameState->to_button.width_ratio = 0.87f;
+        GameState->to_button.width_ratio = 0.1f;
         GameState->to_button.height_ratio = 0.0278f;
         strncpy(GameState->to_button.text,
-                "To: ", 4);
+                "To: ", 5);
         
         GameState->to_button.is_hovered = 0;
         GameState->to_button.is_pressed = 0;
@@ -621,13 +621,23 @@ GAME_INITIALIZE_UI(GameInitializeUI)
         GameState->from_button.x_ratio = 0.1146f;
         GameState->from_button.y_ratio = 0.7731f;
         GameState->from_button.width_ratio = 0.87f;
-        //GameState->from_button.height_ratio = 0.0278f;
         GameState->from_button.height_ratio = 0.0278f;
         strncpy(GameState->from_button.text,
                 "From: ", 6);
         
         GameState->from_button.is_hovered = 0;
         GameState->from_button.is_pressed = 0;
+        
+        // Forward
+        GameState->forward_button.x_ratio = 0.1146f;
+        GameState->forward_button.y_ratio = 0.7731f;
+        GameState->forward_button.width_ratio = 0.057f;
+        GameState->forward_button.height_ratio = 0.0278f;
+        strncpy(GameState->forward_button.text,
+                "Forward: ", 9);
+        
+        GameState->forward_button.is_hovered = 0;
+        GameState->forward_button.is_pressed = 0;
         
         // Reply text input
         GameState->reply_body.buffer[0] = '\0';
@@ -728,41 +738,42 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             
             RenderButtonRatio(&GameState->to_button, GameState);
             
+            // Render the To buffer
+            RenderTextInput(GameState, &GameState->to_body,
+                            0.137f * WINDOW_WIDTH_HD,
+                            0.7731f * WINDOW_HEIGHT_HD,
+                            0.847f * WINDOW_WIDTH_HD,
+                            0.0278f * WINDOW_HEIGHT_HD);
+            
             // Render the reply composition
             RenderTextInput(GameState, &GameState->reply_body,
                             0.1146f * WINDOW_WIDTH_HD,
-                            0.4f * WINDOW_HEIGHT_HD,
+                            0.41f * WINDOW_HEIGHT_HD,
                             0.87f * WINDOW_WIDTH_HD,
                             0.35f * WINDOW_HEIGHT_HD);
             
-            // Render the To buffer
-            RenderTextInput(GameState, &GameState->to_body,
-                            0.1146f * WINDOW_WIDTH_HD,
-                            0.7731f * WINDOW_HEIGHT_HD,
-                            0.87f * WINDOW_WIDTH_HD,
-                            0.0278f * WINDOW_HEIGHT_HD);
             
         } break;
         
         case MODE_FORWARDING_EMAIL:
         {
             
-            RenderButtonRatio(&GameState->to_button, GameState);
+            RenderButtonRatio(&GameState->forward_button, GameState);
+            
+            // Render the To buffer
+            RenderTextInput(GameState, &GameState->to_body,
+                            0.17f * WINDOW_WIDTH_HD,
+                            0.7731f * WINDOW_HEIGHT_HD,
+                            0.812f * WINDOW_WIDTH_HD,
+                            0.0278f * WINDOW_HEIGHT_HD);
             
             
             // Render the reply composition
             RenderTextInput(GameState, &GameState->reply_body,
                             0.1146f * WINDOW_WIDTH_HD,
-                            0.4f * WINDOW_HEIGHT_HD,
+                            0.41f * WINDOW_HEIGHT_HD,
                             0.87f * WINDOW_WIDTH_HD,
                             0.35f * WINDOW_HEIGHT_HD);
-            
-            // Render the To buffer
-            RenderTextInput(GameState, &GameState->to_body,
-                            0.1146f * WINDOW_WIDTH_HD,
-                            0.7731f * WINDOW_HEIGHT_HD,
-                            0.87f * WINDOW_WIDTH_HD,
-                            0.0278f * WINDOW_HEIGHT_HD);
             
         } break;
     }
@@ -1102,7 +1113,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     }
                     
                     // Update the To button text
-                    strncpy(GameState->to_button.text, "To: ", 5);
+                    //strncpy(GameState->to_button.text, "To: ", 5);
                     
                     // Pre-populate the reply buffer with forwarded content
                     char separator[] = "\n---------- Forwarded message ----------\n";
@@ -1212,7 +1223,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     GameState->reply_body.is_active = 1;
                     
                     // fill in To: header
-                    memmove(GameState->to_button.text+4, GameState->email_array[GameState->email_list.selected_item].from, sizeof(GameState->email_array[GameState->email_list.selected_item].from));
+                    memmove(GameState->to_body.buffer, GameState->email_array[GameState->email_list.selected_item].from, sizeof(GameState->email_array[GameState->email_list.selected_item].from));
                 } break;
                 
                 // go back to email_list
@@ -1236,7 +1247,6 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
             {
                 GameState->to_body.is_active = 1;
             }
-            
             if(GameState->to_body.is_active)
             {
                 switch (key_code)
@@ -1260,7 +1270,14 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     case VK_ESCAPE:
                     {
                         GameState->to_body.is_active = 0;
+                        GameState->reply_body.is_active = 0;
                         //GameState->current_mode = MODE_READING_EMAIL;
+                    } break;
+                    
+                    case VK_TAB:
+                    {
+                        GameState->to_body.is_active = !GameState->to_body.is_active;
+                        GameState->reply_body.is_active = !GameState->reply_body.is_active;
                     } break;
                     
                     default:
@@ -1309,7 +1326,14 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     case VK_ESCAPE:
                     {
                         GameState->reply_body.is_active = 0;
+                        GameState->to_body.is_active = 0;
                         //GameState->current_mode = MODE_READING_EMAIL;
+                    } break;
+                    
+                    case VK_TAB:
+                    {
+                        GameState->to_body.is_active = !GameState->to_body.is_active;
+                        GameState->reply_body.is_active = !GameState->reply_body.is_active;
                     } break;
                     
                     default:
@@ -1353,13 +1377,6 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         GameState->reply_body.blink_timer = 0.0f;
                         GameState->to_body.blink_timer = 0.0f;
                         
-                    } break;
-                    
-                    // switch between To field and message body
-                    case VK_TAB:
-                    {
-                        GameState->to_body.is_active = !GameState->to_body.is_active;
-                        GameState->reply_body.is_active = !GameState->reply_body.is_active;
                     } break;
                     
                     // send email
@@ -1438,7 +1455,15 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     case VK_ESCAPE:
                     {
                         GameState->reply_body.is_active = 0;
+                        GameState->to_body.is_active = 0;
+                        
                         //GameState->current_mode = MODE_READING_EMAIL;
+                    } break;
+                    
+                    case VK_TAB:
+                    {
+                        GameState->to_body.is_active = !GameState->to_body.is_active;
+                        GameState->reply_body.is_active = !GameState->reply_body.is_active;
                     } break;
                     
                     default:
@@ -1517,7 +1542,14 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     case VK_ESCAPE:
                     {
                         GameState->to_body.is_active = 0;
+                        GameState->reply_body.is_active = 0;
                         //GameState->current_mode = MODE_READING_EMAIL;
+                    } break;
+                    
+                    case VK_TAB:
+                    {
+                        GameState->to_body.is_active = !GameState->to_body.is_active;
+                        GameState->reply_body.is_active = !GameState->reply_body.is_active;
                     } break;
                     
                     default:
@@ -1560,12 +1592,6 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         // zero out blink_timers
                         GameState->reply_body.blink_timer = 0.0f;
                         GameState->to_body.blink_timer = 0.0f;
-                    } break;
-                    
-                    case VK_TAB:
-                    {
-                        GameState->to_body.is_active = !GameState->to_body.is_active;
-                        GameState->reply_body.is_active = !GameState->reply_body.is_active;
                     } break;
                     
                     // send email
