@@ -764,9 +764,8 @@ GAME_UPDATE_AND_RENDER(GameUpdateAndRender)
             RenderTextInput(GameState, &GameState->to_body,
                             0.17f * WINDOW_WIDTH_HD,
                             0.7731f * WINDOW_HEIGHT_HD,
-                            0.812f * WINDOW_WIDTH_HD,
+                            0.815f * WINDOW_WIDTH_HD,
                             0.0278f * WINDOW_HEIGHT_HD);
-            
             
             // Render the reply composition
             RenderTextInput(GameState, &GameState->reply_body,
@@ -1224,6 +1223,14 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     
                     // fill in To: header
                     memmove(GameState->to_body.buffer, GameState->email_array[GameState->email_list.selected_item].from, sizeof(GameState->email_array[GameState->email_list.selected_item].from));
+                    
+                    // set cursor to the end of the list of recipients
+                    GameState->to_body.buffer_length = strlen(GameState->to_body.buffer);
+                    
+                    // TODO(trist007): should not be typecasting a size_t to an int, what if
+                    // size_t is bigger than the maximum value for an int?
+                    GameState->to_body.cursor_position = (int)GameState->to_body.buffer_length;
+                    
                 } break;
                 
                 // go back to email_list
