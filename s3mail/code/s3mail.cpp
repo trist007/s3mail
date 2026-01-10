@@ -1287,6 +1287,26 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         GameState->reply_body.is_active = !GameState->reply_body.is_active;
                     } break;
                     
+                    case VK_HOME:
+                    {
+                        GameState->reply_body.cursor_position = 0;
+                        
+                    } break;
+                    
+                    case VK_END:
+                    {
+                        int pos = GameState->reply_body.cursor_position;
+                        
+                        while(pos < GameState->reply_body.buffer_length &&
+                              GameState->reply_body.buffer[pos] != '\n')
+                        {
+                            pos++;
+                        }
+                        
+                        GameState->reply_body.cursor_position = pos;
+                        
+                    } break;
+                    
                     default:
                     {
                         // handle regular char input
@@ -1341,6 +1361,26 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     {
                         GameState->to_body.is_active = !GameState->to_body.is_active;
                         GameState->reply_body.is_active = !GameState->reply_body.is_active;
+                    } break;
+                    
+                    case VK_HOME:
+                    {
+                        GameState->reply_body.cursor_position = 0;
+                        
+                    } break;
+                    
+                    case VK_END:
+                    {
+                        int pos = GameState->reply_body.cursor_position;
+                        
+                        while(pos < GameState->reply_body.buffer_length &&
+                              GameState->reply_body.buffer[pos] != '\n')
+                        {
+                            pos++;
+                        }
+                        
+                        GameState->reply_body.cursor_position = pos;
+                        
                     } break;
                     
                     default:
@@ -1443,6 +1483,25 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                         }
                     } break;
                     
+                    case VK_HOME:
+                    {
+                        GameState->reply_body.cursor_position = 0;
+                        
+                    } break;
+                    
+                    case VK_END:
+                    {
+                        int pos = GameState->reply_body.cursor_position;
+                        
+                        while(pos < GameState->reply_body.buffer_length &&
+                              GameState->reply_body.buffer[pos] != '\n')
+                        {
+                            pos++;
+                        }
+                        
+                        GameState->reply_body.cursor_position = pos;
+                        
+                    } break;
                     
                     case VK_RETURN:
                     {
@@ -1557,6 +1616,26 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     {
                         GameState->to_body.is_active = !GameState->to_body.is_active;
                         GameState->reply_body.is_active = !GameState->reply_body.is_active;
+                    } break;
+                    
+                    case VK_HOME:
+                    {
+                        GameState->reply_body.cursor_position = 0;
+                        
+                    } break;
+                    
+                    case VK_END:
+                    {
+                        int pos = GameState->reply_body.cursor_position;
+                        
+                        while(pos < GameState->reply_body.buffer_length &&
+                              GameState->reply_body.buffer[pos] != '\n')
+                        {
+                            pos++;
+                        }
+                        
+                        GameState->reply_body.cursor_position = pos;
+                        
                     } break;
                     
                     default:
