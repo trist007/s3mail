@@ -22,6 +22,44 @@
 
 // Code re-use utility functions
 void
+SerializeRecipients(game_state *GameState)
+{
+    char *buffer = GameState->to_body.buffer;
+    if(buffer)
+    {
+        size_t pos = 0;
+        size_t start = pos;
+        size_t length = strlen(GameState->to_body.buffer);
+        int num = 0;
+        while(pos <= length)
+        {
+            if(buffer[pos] == ',' || buffer[pos] == '\0')
+            {
+                //memcpy(GameState->recipients[num],
+                strncpy(GameState->recipients[num],
+                        (GameState->to_body.buffer + start), (pos - start));
+                if(buffer[pos] == '\0') break;
+                num++;
+            }
+            if(buffer[pos] == ' ')
+            {
+                
+                if(pos < GameState->to_body.buffer_length)
+                {
+                    pos++;
+                }
+                start = pos;
+            }
+            if(pos < GameState->to_body.buffer_length)
+            {
+                pos++;
+            }
+        }
+        
+    }
+}
+
+void
 SendEmail(PlatformAPI *platform, game_state *GameState)
 {
     
@@ -51,25 +89,15 @@ SendEmail(PlatformAPI *platform, game_state *GameState)
     fprintf(fp, "\", \"Charset\": \"UTF-8\"}}}\n");
     fclose(fp);
     
-    char recipient[256];
-    if(GameState->current_mode == MODE_FORWARDING_EMAIL)
-    {
-        strncpy(recipient, GameState->to_body.buffer, sizeof(recipient) - 1);
-        recipient[sizeof(recipient) - 1] = '\0';
-    }
-    else
-    {
-        strncpy(recipient, GameState->email_array[GameState->email_list.selected_item].from,
-                sizeof(recipient) - 1);
-        recipient[sizeof(recipient) - 1] = '\0';
-    }
+    char recipients[1024];
+    strncpy(recipients, GameState->to_body.buffer, strlen(GameState->to_body.buffer));
     
     // Format the command with proper escaping
     snprintf(command, sizeof(command),
              "aws ses send-email "
              "--from " EMAIL_ADDRESS " "
              "--destination ToAddresses=%s "
-             "--message file://temp_message.json", recipient);
+             "--message file://temp_message.json", recipients);
     
     // TODO(trist007): need to implement the Body as proper json escaping to account for \r\n
     
@@ -1429,6 +1457,7 @@ GAME_HANDLE_KEY_PRESS(GameHandleKeyPress) {
                     // send email
                     case 'Y':
                     {
+                        SerializeRecipients(GameState);
                         SendEmail(platform, GameState);
                         
                     } break;

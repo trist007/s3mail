@@ -191,6 +191,7 @@ typedef struct {
     HWND Window;
 } PlatformAPI;
 
+void SerializeRecipients(game_state *GameState);
 void SendEmail(game_state *GameState, PlatformAPI *platform);
 
 // DLL export signature

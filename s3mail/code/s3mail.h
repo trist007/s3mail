@@ -143,6 +143,7 @@ struct game_state
     char email_content[256000];
     char parsed_email[1000][256];
     int32 line_count;
+    char recipients[256][256];
     
     // text input for compose and reply
     text_input reply_body;
